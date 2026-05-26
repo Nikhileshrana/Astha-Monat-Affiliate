@@ -26,17 +26,6 @@ type HeroSlideData = {
 
 const HERO_SLIDES: HeroSlideData[] = [
   {
-    id: "barrier-booster",
-    badge: "NEW",
-    headline: "MONAT BARRIER BOOSTER™",
-    subheadline: "Peptide-Powered Protection for Glass Skin.",
-    ctaLabel: "NOW AVAILABLE!",
-    ctaHref: "#",
-    imageSrc: "/website/hero-barrier-booster.png",
-    gradientClass: "from-[#f8d4d8] via-[#f5c9c4] to-[#f0b8a8]",
-    imagePosition: "70% center",
-  },
-  {
     id: "skin-elixir",
     badge: "BESTSELLER",
     headline: "REJUVABEADS® ELIXIR",
