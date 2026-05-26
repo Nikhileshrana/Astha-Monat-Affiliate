@@ -85,7 +85,7 @@ function AsthaMonatLogo() {
       className="flex shrink-0 items-center gap-[0.375rem] font-sans text-neutral-950 hover:opacity-85 sm:gap-2 md:gap-[0.625rem]"
       aria-label="ASTHA × MONAT, home"
     >
-      <span className="shrink-0 text-sm font-semibold uppercase leading-none tracking-[0.28em] sm:text-base md:text-lg">
+      <span className="shrink-0 text-sm font-semibold uppercase leading-none tracking-[0.28em] md:text-xl">
         ASTHA
       </span>
       <span
