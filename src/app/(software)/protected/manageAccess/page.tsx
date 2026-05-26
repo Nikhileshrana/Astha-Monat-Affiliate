@@ -213,14 +213,14 @@ export default function AccessManagementPage() {
   return (
     <>
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent side="right" className="w-[400px] sm:max-w-md flex flex-col h-full overflow-hidden">
+        <SheetContent side="right" className="w-[400px] sm:max-w-lg! flex flex-col h-full overflow-hidden">
           <SheetHeader className="border-b">
             <SheetTitle>{isEditing ? "Edit User Access" : "Grant New Access"}</SheetTitle>
             <SheetDescription>
               Assign the available protected modules securely to any specific user via their verified Next.js email.
             </SheetDescription>
           </SheetHeader>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="font-medium">User Email Address</Label>
               <Input

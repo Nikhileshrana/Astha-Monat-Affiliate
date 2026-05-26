@@ -42,8 +42,8 @@ function AccordionTrigger({
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
-          "group/accordion-trigger relative flex flex-1 items-start justify-between rounded-lg border border-transparent py-2.5 text-left text-sm font-medium transition-all outline-none hover:underline focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:after:border-ring disabled:pointer-events-none disabled:opacity-50 **:data-[slot=accordion-trigger-icon]:ml-auto **:data-[slot=accordion-trigger-icon]:size-4 **:data-[slot=accordion-trigger-icon]:text-muted-foreground",
-          className,
+          "group/accordion-trigger relative flex flex-1 items-start justify-between gap-6 rounded-none border border-transparent py-4 text-start text-sm font-semibold transition-all outline-none hover:underline focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:pointer-events-none disabled:opacity-50 **:data-[slot=accordion-trigger-icon]:ms-auto **:data-[slot=accordion-trigger-icon]:size-3.5 **:data-[slot=accordion-trigger-icon]:text-muted-foreground",
+          className
         )}
         {...props}
       >
@@ -60,58 +60,16 @@ function AccordionContent({
   children,
   ...props
 }: React.ComponentProps<typeof AccordionPrimitive.Content>) {
-  const rootRef = React.useRef<HTMLDivElement>(null)
-
-  React.useEffect(() => {
-    const root = rootRef.current
-    if (!root) return
-
-    const clearMotionLocks = () => {
-      root.style.animation = ""
-      root.style.height = ""
-      root.style.transition = ""
-    }
-
-    const onAnimationEnd = (e: AnimationEvent) => {
-      if (e.target !== root) return
-      const name = e.animationName
-      /* Drop fill-mode lock so nested panels can grow; layout stays overflow-hidden on root. */
-      if (name.includes("accordion-down") && root.dataset.state === "open") {
-        root.style.animation = "none"
-        root.style.height = "auto"
-      }
-      if (name.includes("accordion-up")) {
-        clearMotionLocks()
-      }
-    }
-
-    root.addEventListener("animationend", onAnimationEnd)
-
-    const mo = new MutationObserver(() => {
-      if (root.dataset.state !== "open") {
-        clearMotionLocks()
-      }
-    })
-    mo.observe(root, { attributes: true, attributeFilter: ["data-state"] })
-
-    return () => {
-      root.removeEventListener("animationend", onAnimationEnd)
-      mo.disconnect()
-      clearMotionLocks()
-    }
-  }, [])
-
   return (
     <AccordionPrimitive.Content
-      ref={rootRef}
       data-slot="accordion-content"
-      className="overflow-hidden text-sm"
+      className="overflow-hidden text-sm data-open:animate-accordion-down data-closed:animate-accordion-up"
       {...props}
     >
       <div
         className={cn(
-          "pt-0 pb-2.5 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-foreground [&_p:not(:last-child)]:mb-4",
-          className,
+          "h-(--radix-accordion-content-height) pt-0 pb-4 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-foreground [&_p:not(:last-child)]:mb-4",
+          className
         )}
       >
         {children}

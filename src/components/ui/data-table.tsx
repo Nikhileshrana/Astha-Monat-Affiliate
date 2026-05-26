@@ -154,7 +154,7 @@ export function DataTable<TData, TValue>({
         {customSearch ? (
           customSearch
         ) : (
-          <div className="relative w-full sm:max-w-xs p-1">
+          <div className="relative w-full sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder={searchPlaceholder}
@@ -206,7 +206,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* ── Table ── */}
-      <div className="rounded-md border overflow-hidden">
+      <div className="rounded-none border overflow-hidden">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -215,7 +215,7 @@ export function DataTable<TData, TValue>({
                   <TableHead
                     key={header.id}
                     className={cn(
-                      "text-white [&_button]:text-white [&_svg]:text-white",
+                      "text-white [&_button]:text-white [&_svg]:text-white dark:text-black dark:[&_button]:text-black dark:[&_svg]:text-black",
                       (header.column.columnDef.meta as DataTableColumnMeta | undefined)
                         ?.headerClassName,
                     )}

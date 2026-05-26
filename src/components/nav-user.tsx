@@ -66,7 +66,7 @@ export function NavUser({
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback className="rounded-lg text-primary">
-                  <img src="/logo.svg" alt="Doc with AI" width={40} height={40} />
+                  <img src="/logo.png" alt="ASTHA × MONAT" width={40} height={40} />
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
