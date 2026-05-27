@@ -17,13 +17,8 @@ import {
 import { cn } from "@/lib/utils";
 
 /** Set `NEXT_PUBLIC_INSTAGRAM_URL` in `.env` to your IG profile. */
-const INSTAGRAM_URL =
-  typeof process.env.NEXT_PUBLIC_INSTAGRAM_URL === "string" &&
-  process.env.NEXT_PUBLIC_INSTAGRAM_URL.trim() !== ""
-    ? process.env.NEXT_PUBLIC_INSTAGRAM_URL
-    : "https://www.instagram.com/asthahairexpert.com";
+const INSTAGRAM_URL = "https://www.instagram.com/asthasharma28/"
 
-const TIKTOK_URL = "https://www.tiktok.com";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -89,7 +84,7 @@ function AsthaMonatLogo() {
         ASTHA
       </span>
       <span
-        className="shrink-0 translate-y-[0.035em] px-px text-xs font-light leading-none opacity-65 sm:text-sm md:text-base"
+        className="shrink-0 translate-y-[0.035em] px-px text-xs font-extrabold leading-none sm:text-sm md:text-base"
         aria-hidden
       >
         ×
@@ -183,13 +178,6 @@ export function Navbar() {
                       target="_blank"
                       rel="noopener noreferrer"
                       label="Instagram"
-                      style={{ height: 36, width: 36 }}
-                    />
-                    <SocialIcon
-                      url={TIKTOK_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      label="TikTok"
                       style={{ height: 36, width: 36 }}
                     />
                   </div>

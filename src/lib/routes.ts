@@ -1,12 +1,7 @@
 import {
   LucideIcon,
   ShieldCheck,
-  Globe,
-  Receipt,
-  CalendarCheck,
-  UserRound,
-  Pill,
-  Stethoscope,
+  FileQuestionMark,
 } from "lucide-react";
 
 export const ADMIN_EMAIL = "realnikhileshrana@gmail.com";
@@ -27,6 +22,19 @@ export interface RouteGroup {
 }
 
 export const ROUTES_CONFIG: RouteGroup[] = [
+  {
+    title: "Forms",
+    url: "#",
+    icon: FileQuestionMark,
+    isActive: false,
+    items: [
+      {
+        title: "Hair Quiz Submissions",
+        url: "/protected/hairQuizForms",
+        requiresAccess: true,
+      },
+    ],
+  },
   {
     title: "Access Control",
     url: "#",

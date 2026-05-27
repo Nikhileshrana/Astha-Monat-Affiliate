@@ -1,16 +1,21 @@
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { Geist_Mono, Montserrat, Playfair_Display } from "next/font/google";
 import "./globals.css";
-import { cn } from "@/lib/utils";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Toaster } from "@/components/ui/sonner";
-import { ThemeProvider } from "@/components/theme-provider";
 import Script from "next/script";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const montserrat = Montserrat({
   subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-display-serif",
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -29,12 +34,10 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       suppressHydrationWarning
       className={cn(
-        "h-full",
-        "antialiased",
-        geistSans.variable,
+        "h-full font-sans antialiased",
+        montserrat.variable,
+        playfairDisplay.variable,
         geistMono.variable,
-        "font-sans",
-        inter.variable,
       )}
     >
       <head>
@@ -65,9 +68,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <TooltipProvider>
-              {children}
-          </TooltipProvider>
+          <TooltipProvider>{children}</TooltipProvider>
           <Toaster />
         </ThemeProvider>
       </body>

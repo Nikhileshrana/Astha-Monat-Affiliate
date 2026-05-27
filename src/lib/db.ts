@@ -23,33 +23,7 @@ export const COLLECTIONS = {
   // Software Access collections
   SOFTWARE_ACCESS: "SoftwareAccess",
 
-  // Company Settings collections
-  COMPANY_SETTINGS: "CompanySettings",
+  //QUIZ Results collections
+  HAIR_QUIZ_FORMS: "HairQuizForms",
 
-  // Appointment Settings collections
-  APPOINTMENT_SETTINGS: "AppointmentSettings",
-
-  // Appointment collections
-  APPOINTMENTS: "Appointments",
-
-  // Patient collections
-  PATIENTS: "Patients",
-
-  // Patient Queue
-  PATIENTQUEUE: "PatientQueue",
-
-  /** Doctors with nested services (name, description, price) */
-  DOCTORS: "Doctors",
-
-  // Website Configuration
-  WEBSITE_CONFIG: "WebsiteConfig",
-
-  // Bills / Sales
-  BILLS: "Bills",
-
-  // Hospital pharmacy — one document per product (SKU), batches[] for stock lines
-  PHARMACY_INVENTORY: "PharmacyInventory",
-
-  /** Single-doc pharmacy invoice branding (logo, bank, UPI, terms) */
-  PHARMACY_CONFIG: "PharmacyConfig",
 } as const;

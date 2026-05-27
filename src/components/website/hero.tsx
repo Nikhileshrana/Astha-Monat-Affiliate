@@ -26,67 +26,34 @@ type HeroSlideData = {
 
 const HERO_SLIDES: HeroSlideData[] = [
   {
-    id: "skin-elixir",
-    badge: "BESTSELLER",
-    headline: "REJUVABEADS® ELIXIR",
-    subheadline: "Oil-infused shine for visibly healthier strands.",
-    ctaLabel: "DISCOVER MORE",
-    ctaHref: "#",
-    gradientClass: "from-[#fce4ec] via-[#f8bbd9] to-[#f48fb1]",
-  },
-  {
-    id: "body-care",
-    badge: null,
-    headline: "BODY CARE ESSENTIALS",
-    subheadline: "Hydration that lasts from morning to night.",
-    ctaLabel: "SHOP BODY",
-    ctaHref: "#",
-    gradientClass: "from-[#fceee8] via-[#f5d5c8] to-[#e8b4a0]",
-  },
-  {
-    id: "wellness",
-    badge: "NEW",
-    headline: "WELLNESS ROUTINE",
-    subheadline: "Support radiance inside and out.",
-    ctaLabel: "EXPLORE",
-    ctaHref: "#",
-    gradientClass: "from-[#f3e8f5] via-[#e1bee7] to-[#ce93d8]",
-  },
-  {
-    id: "holiday",
-    badge: null,
-    headline: "GIFTS SHE’LL LOVE",
-    subheadline: "Limited sets for every texture and scent.",
-    ctaLabel: "SHOP GIFTS",
-    ctaHref: "#",
-    gradientClass: "from-[#ffebee] via-[#ffcdd2] to-[#ef9a9a]",
-  },
-  {
     id: "men",
     badge: null,
-    headline: "MONAT BLACK™",
-    subheadline: "Grooming engineered for effortless style.",
-    ctaLabel: "FOR HIM",
-    ctaHref: "#",
+    headline: "MONAT IR CLINICAL™ HAIR THINNING DEFENSE SERUM",
+    subheadline: "This targeted treatment helps nourish the scalp and support thicker-looking hair over time. The fast-absorbing, non-greasy formula helps improve overall hair appearance and resilience for stronger-looking strands from the foundation.",
+    ctaLabel: "Buy Now",
+    ctaHref: "https://monatsocialshop.com/ASTHA-RANA?q=ir-clinical-hair-thinning-defense",
     gradientClass: "from-[#eceff1] via-[#cfd8dc] to-[#90a4ae]",
+    imageSrc: "/images/hero/1.webp",
   },
   {
     id: "color",
     badge: null,
-    headline: "COLOR & CARE SYSTEM",
-    subheadline: "Vivid color meets bond-building moisture.",
-    ctaLabel: "VIEW SYSTEM",
-    ctaHref: "#",
+    headline: "MONAT REJUVENIQE® Oil Intensive",
+    subheadline: "This lightweight treatment oil is formulated with a proprietary blend of 13+ plant and essential oils to help smooth frizz, improve softness, and enhance shine while also hydrating the skin.",
+    ctaLabel: "Buy Now",
+    ctaHref: "https://monatsocialshop.com/ASTHA-RANA?q=rejuveniqe-oil-intensive",
     gradientClass: "from-[#fff3e0] via-[#ffe0b2] to-[#ffcc80]",
+    imageSrc: "/images/hero/2.webp",
   },
   {
     id: "join",
     badge: null,
-    headline: "JOIN THE MOVEMENT",
-    subheadline: "Share MONAT™ and earn on your schedule.",
-    ctaLabel: "LEARN MORE",
-    ctaHref: "#",
+    headline: "MONAT REJUVABEADS",
+    subheadline: "This targeted formula helps minimize friction along the hair fiber to support healthier-looking ends without weighing hair down.",
+    ctaLabel: "Buy Now",
+    ctaHref: "https://monatsocialshop.com/ASTHA-RANA?q=rejuvabeads",
     gradientClass: "from-[#e8eaf6] via-[#c5cae9] to-[#9fa8da]",
+    imageSrc: "/images/hero/3.webp",
   },
 ];
 
@@ -165,7 +132,7 @@ function HeroSlideCard({
       ) : null}
 
       <div
-        className="pointer-events-none absolute inset-0 bg-linear-to-r from-black/25 via-black/10 to-transparent"
+        className="pointer-events-none absolute inset-0 bg-linear-to-t from-[#4b3d60]/95 via-[#4b3d60]/45 to-transparent"
         aria-hidden
       />
 

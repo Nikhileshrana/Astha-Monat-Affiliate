@@ -1,20 +1,19 @@
-import { Montserrat } from "next/font/google";
-
+import BeforeAfterSection from "@/components/website/before-after";
+import { SiteFooter } from "@/components/website/footer";
 import { HeroSection } from "@/components/website/hero";
+import JourneyCtaSection from "@/components/website/journey-cta";
 import { Navbar } from "@/components/website/navbar";
-import MasonryGridDemo from "@/components/website/testimonials";
-
-const monatSans = Montserrat({
-  subsets: ["latin"],
-  display: "swap",
-});
+import TestimonialsCarousel from "@/components/website/testimonials";
 
 export default function Page() {
   return (
-    <div className={`${monatSans.className} min-h-svh antialiased`}>
+    <div className="min-h-svh antialiased">
       <Navbar />
       <HeroSection />
-      <MasonryGridDemo />
+      <BeforeAfterSection />
+      <TestimonialsCarousel />
+      <JourneyCtaSection />
+      <SiteFooter />
     </div>
   );
 }
