@@ -2,8 +2,8 @@
 
 import { MenuIcon } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { SocialIcon } from "react-social-icons";
-
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -17,32 +17,97 @@ import {
 import { cn } from "@/lib/utils";
 
 /** Set `NEXT_PUBLIC_INSTAGRAM_URL` in `.env` to your IG profile. */
-const INSTAGRAM_URL = "https://www.instagram.com/asthasharma28/"
+const INSTAGRAM_URL = "https://www.instagram.com/asthasharma28/";
+const METASHOP_URL = "https://monatsocialshop.com/ASTHA-RANA";
 
+type NavLink = {
+  label: string;
+  href: string;
+  external?: boolean;
+  scrollToId?: string;
+};
 
-const NAV_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "#", label: "Shop bestsellers" },
-  { href: "#", label: "Hair care" },
-  { href: "#", label: "Skin care" },
-  { href: "#", label: "Body care" },
-  { href: "#", label: "Join & earn" },
-] as const;
+const NAV_LINKS: NavLink[] = [
+  {
+    label: "Before and After",
+    href: "/#before-and-after",
+    scrollToId: "before-and-after",
+  },
+  {
+    label: "Shop Essentials",
+    href: METASHOP_URL,
+    external: true,
+  },
+  {
+    label: "Hair Quiz Consultation",
+    href: "/hair-quiz",
+  },
+  {
+    label: "Be an Affiliate",
+    href: "/apply-affiliate",
+  },
+];
 
+const NAV_LINK_CLASS =
+  "rounded-none px-4 py-3 text-sm font-semibold uppercase tracking-widest text-foreground underline-offset-4 hover:bg-muted hover:no-underline";
+
+function NavSheetLink({ item }: { item: NavLink }) {
+  const pathname = usePathname();
+
+  if (item.scrollToId) {
+    return (
+      <SheetClose asChild>
+        <Link
+          href={item.href}
+          className={NAV_LINK_CLASS}
+          onClick={(event) => {
+            if (pathname !== "/") return;
+
+            event.preventDefault();
+            document
+              .getElementById(item.scrollToId ?? "")
+              ?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+        >
+          {item.label}
+        </Link>
+      </SheetClose>
+    );
+  }
+
+  if (item.external) {
+    return (
+      <SheetClose asChild>
+        <Link
+          href={item.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={NAV_LINK_CLASS}
+        >
+          {item.label}
+        </Link>
+      </SheetClose>
+    );
+  }
+
+  return (
+    <SheetClose asChild>
+      <Link href={item.href} className={NAV_LINK_CLASS}>
+        {item.label}
+      </Link>
+    </SheetClose>
+  );
+}
 function TopBanner() {
   return (
     <div className="bg-black px-4 py-2">
-      <div className="mx-auto flex max-w-[1600px] items-center justify-between text-[11px] font-medium uppercase tracking-[0.12em] text-white">
-        <span>Be an Affiliate</span>
-        <button
-          type="button"
-          className="flex items-center gap-1.5 underline-offset-2 hover:underline"
+      <div className="mx-auto flex max-w-[1600px] items-center justify-center text-[11px] font-medium uppercase tracking-[0.12em] text-white">
+        <Link
+          href="/apply-affiliate"
+          className="transition-opacity hover:opacity-80"
         >
-          <span>Español</span>
-          <span aria-hidden className="text-sm leading-none">
-            🇺🇸
-          </span>
-        </button>
+          Be an Affiliate
+        </Link>
       </div>
     </div>
   );
@@ -157,14 +222,7 @@ export function Navbar() {
 
                 <nav aria-label="Mobile" className="flex flex-col px-4 py-4">
                   {NAV_LINKS.map((item) => (
-                    <SheetClose key={`${item.href}-${item.label}`} asChild>
-                      <Link
-                        href={item.href}
-                        className="rounded-none px-4 py-3 text-sm font-semibold uppercase tracking-widest text-foreground underline-offset-4 hover:bg-muted hover:no-underline"
-                      >
-                        {item.label}
-                      </Link>
-                    </SheetClose>
+                    <NavSheetLink key={item.label} item={item} />
                   ))}
                 </nav>
 

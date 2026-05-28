@@ -6,7 +6,6 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import Link from "next/link";
-import { MARKETING_PURPLE } from "@/lib/marketing-theme";
 import { cn } from "@/lib/utils";
 
 const METASHOP_URL = "https://monatsocialshop.com/ASTHA-RANA";
@@ -53,8 +52,7 @@ function JourneyActionCard({
       <span
         className={cn(
           "flex size-12 shrink-0 items-center justify-center rounded-xl",
-          MARKETING_PURPLE.iconBg,
-          MARKETING_PURPLE.icon,
+          "bg-primary text-primary-foreground",
         )}
       >
         <Icon className="size-5" strokeWidth={1.75} aria-hidden />
@@ -63,7 +61,7 @@ function JourneyActionCard({
         <span
           className={cn(
             "block font-semibold leading-snug",
-            MARKETING_PURPLE.title,
+            "text-foreground",
           )}
         >
           {title}
@@ -71,14 +69,14 @@ function JourneyActionCard({
         <span
           className={cn(
             "mt-0.5 block text-sm leading-snug",
-            MARKETING_PURPLE.subtitle,
+            "text-muted-foreground",
           )}
         >
           {description}
         </span>
       </span>
       <ChevronRight
-        className={cn("size-5 shrink-0", MARKETING_PURPLE.icon)}
+        className={cn("size-5 shrink-0", "text-muted-foreground")}
         strokeWidth={1.75}
         aria-hidden
       />
@@ -87,8 +85,7 @@ function JourneyActionCard({
 
   const className = cn(
     "flex w-full items-center gap-4 rounded-2xl border p-4 shadow-sm",
-    MARKETING_PURPLE.cardBorder,
-    MARKETING_PURPLE.cardSurface,
+    "border-2 border-border bg-card",
     "transition-shadow hover:shadow-md active:scale-[0.995]",
   );
 
@@ -118,14 +115,14 @@ export default function JourneyCtaSection() {
     <section
       className={cn(
         "w-full px-4 py-12 sm:px-6 sm:py-14",
-        MARKETING_PURPLE.sectionBg,
+        "bg-background",
       )}
     >
-      <div className="mx-auto flex w-full max-w-lg flex-col items-center">
+      <div className="mx-auto flex w-full max-w-4xl flex-col items-center">
         <h2
           className={cn(
-            "text-center font-sans text-xl font-semibold leading-snug sm:text-[1.35rem]",
-            MARKETING_PURPLE.heading,
+            "text-center font-heading text-3xl font-bold tracking-tight md:text-4xl",
+            "text-foreground",
           )}
         >
           Ready to start your haircare journey?
@@ -137,19 +134,14 @@ export default function JourneyCtaSection() {
           ))}
         </div>
 
-        <p
-          className={cn(
-            "mt-6 text-center font-sans text-sm font-medium sm:mt-8",
-            MARKETING_PURPLE.heading,
-          )}
-        >
+        <p className="mt-6 text-center text-sm font-medium text-foreground sm:mt-8 sm:text-base">
           Cannot wait to help you 💜
         </p>
 
         <div
           className={cn(
             "mt-10 w-full rounded-3xl px-6 py-10 text-center text-white sm:mt-12 sm:px-8 sm:py-11",
-            MARKETING_PURPLE.affiliate,
+            "bg-primary",
           )}
         >
           <h3 className="font-sans text-2xl font-bold tracking-tight sm:text-[1.65rem]">
@@ -163,11 +155,10 @@ export default function JourneyCtaSection() {
             Affiliate Program Application
           </p>
           <Link
-            href="#"
+            href="/apply-affiliate"
             className={cn(
               "mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-white px-10",
-              "font-sans text-sm font-semibold shadow-sm transition-opacity hover:opacity-95",
-              MARKETING_PURPLE.affiliateButton,
+              "font-sans text-sm font-semibold text-primary shadow-sm transition-opacity hover:opacity-95",
             )}
           >
             Apply Now

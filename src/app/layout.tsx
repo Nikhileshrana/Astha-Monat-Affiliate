@@ -1,4 +1,8 @@
-import { Geist_Mono, Montserrat, Playfair_Display } from "next/font/google";
+import {
+  Geist_Mono,
+  Playfair_Display,
+  Inter,
+} from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -6,11 +10,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  display: "swap",
-});
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
@@ -35,9 +35,9 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn(
         "h-full font-sans antialiased",
-        montserrat.variable,
         playfairDisplay.variable,
         geistMono.variable,
+        inter.variable,
       )}
     >
       <head>

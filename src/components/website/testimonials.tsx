@@ -3,7 +3,6 @@
 import * as React from "react";
 
 import { CardStack, type CardStackItem } from "@/components/ui/card-stack";
-import { MARKETING_PURPLE } from "@/lib/marketing-theme";
 import { cn } from "@/lib/utils";
 
 const TESTIMONIAL_SLIDE_PATHS = Array.from(
@@ -56,24 +55,18 @@ export default function TestimonialsCarousel() {
 
   return (
     <section
+      id="testimonials"
       className={cn(
-        "w-full px-4 py-8 text-foreground sm:px-6 sm:py-10 lg:px-8 lg:py-12",
-        MARKETING_PURPLE.sectionBg,
+        "flex w-full flex-col items-center px-4 py-8 text-foreground sm:px-6 md:h-dvh md:justify-center md:py-6 lg:px-8",
       )}
     >
-      <div className="mx-auto w-full">
+      <div className="mx-auto flex w-full flex-col items-center">
         <h2 className="mb-2 text-center font-heading text-3xl font-bold tracking-tight md:mb-3 md:text-4xl">
-          Testimonials
+          People loved it, you will too! ❤️😊
         </h2>
-        <p className="mx-auto mb-8 max-w-2xl text-center text-sm text-muted-foreground sm:text-base md:mb-10">
-          Drag the front card sideways, tap the arrows or dots, or let it cycle
-          automatically—hover to pause.
-        </p>
-
-        <div className="relative mx-auto w-full overflow-x-clip pb-6">
+        <div className="relative mx-auto w-full overflow-x-clip">
           <CardStack
             className="-mx-1 sm:mx-0"
-            theme="marketing"
             items={TESTIMONIAL_ITEMS}
             initialIndex={0}
             loop
@@ -90,7 +83,6 @@ export default function TestimonialsCarousel() {
               <div
                 className={cn(
                   "flex h-full w-full items-center justify-center p-4",
-                  MARKETING_PURPLE.cardInner,
                 )}
               >
                 {/* biome-ignore lint/performance/noImgElement: static public testimonials */}

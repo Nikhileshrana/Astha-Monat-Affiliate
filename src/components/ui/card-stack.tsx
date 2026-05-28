@@ -7,7 +7,6 @@ import Link from "next/link";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
-import { MARKETING_PURPLE } from "@/lib/marketing-theme";
 import { cn } from "@/lib/utils";
 
 /** Match `prefers-reduced-motion` (Motion’s hook may not resolve in every TS setup). */
@@ -209,12 +208,6 @@ export function CardStack<T extends CardStackItem>({
   const isMarketing = theme === "marketing";
   const controlButtonClass = cn(
     "shrink-0",
-    isMarketing &&
-      cn(
-        MARKETING_PURPLE.accentBorder,
-        MARKETING_PURPLE.accentText,
-        MARKETING_PURPLE.accentHover,
-      ),
   );
 
   const showOpenLink =
@@ -227,13 +220,11 @@ export function CardStack<T extends CardStackItem>({
       <section
         className={cn(
           "relative w-full rounded-2xl outline-none ring-offset-background focus-within:ring-2 focus-within:ring-offset-2",
-          isMarketing
-            ? MARKETING_PURPLE.focusRing
-            : "focus-within:ring-ring/35",
+          "focus-within:ring-ring/35",
         )}
         aria-roledescription="carousel"
         aria-label="Card stack gallery"
-        style={{ height: Math.max(380, cardHeight + 80) }}
+        style={{ height: cardHeight + 56 }}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
       >
@@ -241,18 +232,14 @@ export function CardStack<T extends CardStackItem>({
         <div
           className={cn(
             "pointer-events-none absolute inset-x-0 top-6 mx-auto h-48 w-[70%] rounded-full blur-3xl",
-            isMarketing
-              ? MARKETING_PURPLE.spotlightTop
-              : "bg-black/5 dark:bg-white/5",
+            "bg-black/5 dark:bg-white/5",
           )}
           aria-hidden="true"
         />
         <div
           className={cn(
             "pointer-events-none absolute inset-x-0 bottom-0 mx-auto h-40 w-[76%] rounded-full blur-3xl",
-            isMarketing
-              ? MARKETING_PURPLE.spotlightBottom
-              : "bg-black/10 dark:bg-black/30",
+            "bg-black/10 dark:bg-black/30",
           )}
           aria-hidden="true"
         />
@@ -311,14 +298,7 @@ export function CardStack<T extends CardStackItem>({
                   className={cn(
                     "absolute bottom-0 overflow-hidden rounded-2xl shadow-xl",
                     "will-change-transform select-none",
-                    isMarketing
-                      ? cn(
-                          "border",
-                          MARKETING_PURPLE.cardBorder,
-                          MARKETING_PURPLE.cardSurface,
-                          isActive && MARKETING_PURPLE.activeCardRing,
-                        )
-                      : "border-2 border-border bg-card",
+                    "border-2 border-border bg-card",
                     isActive
                       ? "cursor-grab active:cursor-grabbing"
                       : "cursor-pointer",
@@ -402,12 +382,8 @@ export function CardStack<T extends CardStackItem>({
                     className={cn(
                       "h-2 w-2 rounded-full transition-colors",
                       on
-                        ? isMarketing
-                          ? MARKETING_PURPLE.accent
-                          : "bg-primary"
-                        : isMarketing
-                          ? MARKETING_PURPLE.accentMuted
-                          : "bg-muted-foreground/40 hover:bg-muted-foreground/65",
+                        ? "bg-primary"
+                        : "bg-muted-foreground/40 hover:bg-muted-foreground/65",
                     )}
                     aria-label={`Go to ${it.title}`}
                   />
@@ -421,12 +397,7 @@ export function CardStack<T extends CardStackItem>({
                 rel="noreferrer"
                 className={cn(
                   "inline-flex shrink-0 transition-colors",
-                  isMarketing
-                    ? cn(
-                        MARKETING_PURPLE.subtitle,
-                        "hover:text-[#6d5b8e] dark:hover:text-primary",
-                      )
-                    : "text-muted-foreground hover:text-foreground",
+                  "text-muted-foreground hover:text-foreground",
                 )}
                 aria-label="Open link"
               >

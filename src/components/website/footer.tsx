@@ -4,11 +4,9 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const FOOTER_NAV = [
-  { href: "#", label: "The Science" },
-  { href: "#", label: "Sustainability" },
-  { href: "#", label: "Editorial" },
-  { href: "#", label: "Privacy Policy" },
-  { href: "#", label: "Terms of Service" },
+  { href: "https://monatsocialshop.com/products/thicken-shine-duo?utm_source=superfiliate&utm_campaign=ASTHA-RANA&utm_medium=microsite&utm_content=eyJzZi1leHRlcm5hbC1zZXNzaW9uLXV1aWQiOiI5ZDlkYjBkZi1mZWExLTQ1MjUtYWU3My00NDg3NmJjYTI3ZjgifQ%3D%3D&ref=superfiliate-ASTHA-RANA&attributes=%7B%22sf-external-session-uuid%22+%3D%3E+%221ff2d03e-b932-4b31-b9eb-41c9d6c9c247%22%2C+%22sf-origin%22+%3D%3E+%22microsite--ASTHA-RANA%22%7D#", label: "Cookie Policy" },
+  { href: "https://monatsocialshop.com/policies/privacy-policy", label: "Privacy Policy" },
+  { href: "https://monatsocialshop.com/policies/terms-of-service", label: "Terms of Service" },
 ] as const;
 
 const INSTAGRAM_URL = "https://www.instagram.com/asthasharma28/";
@@ -54,25 +52,6 @@ export function SiteFooter() {
             </Link>
           ))}
         </nav>
-
-        <div className="flex items-center justify-center gap-6">
-          <Link href="#" className={iconLinkClass} aria-label="Share">
-            <Share2 className="size-5" strokeWidth={1.75} aria-hidden />
-          </Link>
-          <Link
-            href={INSTAGRAM_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={iconLinkClass}
-            aria-label="Instagram (opens in a new tab)"
-          >
-            <Aperture className="size-5" strokeWidth={1.75} aria-hidden />
-          </Link>
-          <Link href="#" className={iconLinkClass} aria-label="Media gallery">
-            <SquarePlay className="size-5" strokeWidth={1.75} aria-hidden />
-          </Link>
-        </div>
-
         <p
           className={cn(
             "font-sans text-[10px] font-medium uppercase tracking-[0.22em]",
