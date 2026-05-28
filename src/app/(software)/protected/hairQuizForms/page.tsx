@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, Eye, Trash2 } from "lucide-react";
+import { parsePhoneNumber } from "libphonenumber-js";
 import { toast } from "sonner";
 
 import {
@@ -21,8 +22,10 @@ import { DataTable } from "@/components/ui/data-table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
@@ -62,8 +65,7 @@ type SubmissionMeta = {
   };
 };
 
-type HairQuizSubmission = {
-  _id: string;
+type HairQuizFormData = {
   name: string;
   email: string;
   whatsapp: string;
@@ -71,17 +73,22 @@ type HairQuizSubmission = {
   hairThickness: string;
   hairTexture: string;
   rootType: string;
-  endsType: string;
+  endsType: string | string[];
   hasDandruffOrItchyScalp: string;
   washFrequencyPerWeek: number;
   getsFrizzy: string;
   hotToolsFrequency: string;
-  hairlossConcern: string;
+  hairlossConcern: string | string[];
   currentProducts?: string;
   isColorTreated: string;
   ultimateHairGoal: string;
   budget: string;
   contactPreference: string;
+};
+
+type HairQuizSubmission = {
+  _id: string;
+  formData: HairQuizFormData;
   submissionMeta?: SubmissionMeta;
   createdAt: string;
   updatedAt: string;
@@ -118,8 +125,159 @@ const LABELS: Record<string, string> = {
   whatsapp: "WhatsApp",
 };
 
+const OUTREACH_MESSAGE = "Hello! This is Astha! 💜😊";
+
+function buildWhatsAppUrl(phone: string) {
+  try {
+    const parsed = parsePhoneNumber(phone);
+    const digits = parsed?.format("E.164").replace(/\D/g, "") ?? phone.replace(/\D/g, "");
+    if (!digits) return null;
+    return `https://wa.me/${digits}?text=${encodeURIComponent(OUTREACH_MESSAGE)}`;
+  } catch {
+    const digits = phone.replace(/\D/g, "");
+    if (!digits) return null;
+    return `https://wa.me/${digits}?text=${encodeURIComponent(OUTREACH_MESSAGE)}`;
+  }
+}
+
+function normalizeInstagramHandle(username: string) {
+  return username.trim().replace(/^@+/, "");
+}
+
+function isMobileDevice() {
+  if (typeof navigator === "undefined") return false;
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
+function buildInstagramMobileUrl(username: string) {
+  const handle = normalizeInstagramHandle(username);
+  if (!handle) return null;
+  return `https://ig.me/m/${handle}?text=${encodeURIComponent(OUTREACH_MESSAGE)}`;
+}
+
+function buildInstagramWebUrl(username: string) {
+  const handle = normalizeInstagramHandle(username);
+  if (!handle) return null;
+  return `https://www.instagram.com/${handle}/`;
+}
+
+function openInstagramMessage(username: string) {
+  const handle = normalizeInstagramHandle(username);
+  if (!handle) return;
+
+  if (isMobileDevice()) {
+    const url = buildInstagramMobileUrl(handle);
+    if (!url) return;
+    window.open(url, "_blank", "noopener,noreferrer");
+    return;
+  }
+
+  const profileUrl = buildInstagramWebUrl(handle);
+  if (!profileUrl) return;
+
+  void navigator.clipboard
+    .writeText(OUTREACH_MESSAGE)
+    .then(() => {
+      toast.success("Message copied. Tap Message on their profile to paste.");
+    })
+    .catch(() => {
+      toast.message(`Open their profile and send: ${OUTREACH_MESSAGE}`);
+    });
+
+  window.open(profileUrl, "_blank", "noopener,noreferrer");
+}
+
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+    </svg>
+  );
+}
+
+function InstagramIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+    </svg>
+  );
+}
+
+function ContactActionButtons({
+  whatsapp,
+  instagramUsername,
+}: {
+  whatsapp: string;
+  instagramUsername: string;
+}) {
+  const whatsappUrl = buildWhatsAppUrl(whatsapp);
+  const instagramHandle = normalizeInstagramHandle(instagramUsername);
+  const instagramTitle = isMobileDevice()
+    ? "Message on Instagram"
+    : "Open Instagram profile (message copied to clipboard)";
+
+  return (
+    <>
+      {whatsappUrl ? (
+        <Button
+          asChild
+          size="icon-sm"
+          variant="outline"
+          className="text-[#25D366] hover:text-[#25D366]"
+        >
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Message on WhatsApp"
+            title="Message on WhatsApp"
+          >
+            <WhatsAppIcon className="h-4 w-4" />
+          </a>
+        </Button>
+      ) : (
+        <Button
+          size="icon-sm"
+          variant="outline"
+          className="text-[#25D366]"
+          disabled
+          aria-label="WhatsApp number unavailable"
+        >
+          <WhatsAppIcon className="h-4 w-4" />
+        </Button>
+      )}
+      {instagramHandle ? (
+        <Button
+          type="button"
+          size="icon-sm"
+          variant="outline"
+          className="text-[#E1306C] hover:text-[#E1306C]"
+          onClick={() => openInstagramMessage(instagramHandle)}
+          aria-label={instagramTitle}
+          title={instagramTitle}
+        >
+          <InstagramIcon className="h-4 w-4" />
+        </Button>
+      ) : (
+        <Button
+          size="icon-sm"
+          variant="outline"
+          className="text-[#E1306C]"
+          disabled
+          aria-label="Instagram username unavailable"
+        >
+          <InstagramIcon className="h-4 w-4" />
+        </Button>
+      )}
+    </>
+  );
+}
+
 function formatValue(value: unknown) {
   if (value === null || value === undefined || value === "") return "—";
+  if (Array.isArray(value)) {
+    return value.map((item) => LABELS[String(item)] ?? String(item)).join(", ");
+  }
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (typeof value === "number") return String(value);
   if (typeof value === "string") return LABELS[value] ?? value;
@@ -139,21 +297,19 @@ function DetailRow({ label, value }: { label: string; value: unknown }) {
 
 function SubmissionDetails({ submission }: { submission: HairQuizSubmission }) {
   const meta = submission.submissionMeta;
+  const form = submission.formData;
 
   return (
-    <ScrollArea className="h-full max-h-[calc(100vh-8rem)] pr-4">
+    <ScrollArea className="h-full px-6 pb-4">
       <div className="space-y-6 pb-6">
         <section>
           <h3 className="text-sm font-semibold">Contact</h3>
           <dl className="divide-y divide-border">
-            <DetailRow label="Name" value={submission.name} />
-            <DetailRow label="Email" value={submission.email} />
-            <DetailRow label="WhatsApp" value={submission.whatsapp} />
-            <DetailRow label="Instagram" value={`@${submission.instagramUsername}`} />
-            <DetailRow
-              label="Contact preference"
-              value={submission.contactPreference}
-            />
+            <DetailRow label="Name" value={form.name} />
+            <DetailRow label="Email" value={form.email} />
+            <DetailRow label="WhatsApp" value={form.whatsapp} />
+            <DetailRow label="Instagram" value={`@${form.instagramUsername}`} />
+            <DetailRow label="Contact preference" value={form.contactPreference} />
           </dl>
         </section>
 
@@ -162,25 +318,22 @@ function SubmissionDetails({ submission }: { submission: HairQuizSubmission }) {
         <section>
           <h3 className="text-sm font-semibold">Hair profile</h3>
           <dl className="divide-y divide-border">
-            <DetailRow label="Thickness" value={submission.hairThickness} />
-            <DetailRow label="Texture" value={submission.hairTexture} />
-            <DetailRow label="Roots" value={submission.rootType} />
-            <DetailRow label="Ends" value={submission.endsType} />
+            <DetailRow label="Thickness" value={form.hairThickness} />
+            <DetailRow label="Texture" value={form.hairTexture} />
+            <DetailRow label="Roots" value={form.rootType} />
+            <DetailRow label="Ends" value={form.endsType} />
             <DetailRow
               label="Dandruff / itchy scalp"
-              value={submission.hasDandruffOrItchyScalp}
+              value={form.hasDandruffOrItchyScalp}
             />
-            <DetailRow
-              label="Washes per week"
-              value={submission.washFrequencyPerWeek}
-            />
-            <DetailRow label="Frizzy" value={submission.getsFrizzy} />
-            <DetailRow label="Hot tools" value={submission.hotToolsFrequency} />
-            <DetailRow label="Hairloss concern" value={submission.hairlossConcern} />
-            <DetailRow label="Current products" value={submission.currentProducts} />
-            <DetailRow label="Colour treated" value={submission.isColorTreated} />
-            <DetailRow label="Hair goal" value={submission.ultimateHairGoal} />
-            <DetailRow label="Budget" value={submission.budget} />
+            <DetailRow label="Washes per week" value={form.washFrequencyPerWeek} />
+            <DetailRow label="Frizzy" value={form.getsFrizzy} />
+            <DetailRow label="Hot tools" value={form.hotToolsFrequency} />
+            <DetailRow label="Hairloss concern" value={form.hairlossConcern} />
+            <DetailRow label="Current products" value={form.currentProducts} />
+            <DetailRow label="Colour treated" value={form.isColorTreated} />
+            <DetailRow label="Hair goal" value={form.ultimateHairGoal} />
+            <DetailRow label="Budget" value={form.budget} />
           </dl>
         </section>
 
@@ -333,7 +486,8 @@ export default function HairQuizFormsPage() {
 
   const columns: ColumnDef<HairQuizSubmission>[] = [
     {
-      accessorKey: "name",
+      id: "name",
+      accessorFn: (row) => row.formData.name,
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -344,31 +498,33 @@ export default function HairQuizFormsPage() {
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
-    },
-    {
-      accessorKey: "email",
-      header: "Email",
       cell: ({ row }) => (
-        <div className="max-w-[12rem] truncate text-sm">{row.getValue("email")}</div>
+        <div className="font-medium">{row.original.formData.name}</div>
       ),
     },
     {
-      accessorKey: "whatsapp",
+      id: "whatsapp",
+      accessorFn: (row) => row.formData.whatsapp,
       header: "WhatsApp",
-      cell: ({ row }) => <div className="text-sm whitespace-nowrap">{row.getValue("whatsapp")}</div>,
+      cell: ({ row }) => (
+        <div className="text-sm whitespace-nowrap">{row.original.formData.whatsapp}</div>
+      ),
     },
     {
-      accessorKey: "instagramUsername",
+      id: "instagramUsername",
+      accessorFn: (row) => row.formData.instagramUsername,
       header: "Instagram",
-      cell: ({ row }) => <div className="text-sm">@{row.getValue("instagramUsername")}</div>,
+      cell: ({ row }) => (
+        <div className="text-sm">@{row.original.formData.instagramUsername}</div>
+      ),
     },
     {
-      accessorKey: "contactPreference",
+      id: "contactPreference",
+      accessorFn: (row) => row.formData.contactPreference,
       header: "Contact",
       cell: ({ row }) => (
         <Badge variant="outline" className="capitalize">
-          {formatValue(row.getValue("contactPreference"))}
+          {formatValue(row.original.formData.contactPreference)}
         </Badge>
       ),
     },
@@ -395,8 +551,13 @@ export default function HairQuizFormsPage() {
       header: () => <div className="text-right">Actions</div>,
       cell: ({ row }) => {
         const submission = row.original;
+        const { whatsapp, instagramUsername } = submission.formData;
         return (
           <div className="flex items-center justify-end gap-2">
+            <ContactActionButtons
+              whatsapp={whatsapp}
+              instagramUsername={instagramUsername}
+            />
             <Button
               size="sm"
               variant="outline"
@@ -421,13 +582,6 @@ export default function HairQuizFormsPage() {
 
   return (
     <>
-      <div className="mb-2">
-        <h1 className="text-lg font-semibold">Hair Quiz Submissions</h1>
-        <p className="text-sm text-muted-foreground">
-          Review quiz responses with contact details and submission metadata.
-        </p>
-      </div>
-
       <DataTable
         columns={columns}
         data={submissions}
@@ -449,9 +603,12 @@ export default function HairQuizFormsPage() {
         open={!!selectedSubmission}
         onOpenChange={(open) => !open && setSelectedSubmission(null)}
       >
-        <SheetContent side="right" className="flex w-full flex-col sm:max-w-xl">
-          <SheetHeader className="border-b pb-4">
-            <SheetTitle>{selectedSubmission?.name ?? "Submission"}</SheetTitle>
+        <SheetContent
+          side="right"
+          className="flex h-full w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-xl!"
+        >
+          <SheetHeader className="border-b">
+            <SheetTitle>{selectedSubmission?.formData.name ?? "Submission"}</SheetTitle>
             <SheetDescription>
               Submitted{" "}
               {selectedSubmission
@@ -459,7 +616,18 @@ export default function HairQuizFormsPage() {
                 : ""}
             </SheetDescription>
           </SheetHeader>
-          {selectedSubmission ? <SubmissionDetails submission={selectedSubmission} /> : null}
+          {selectedSubmission ? (
+            <div className="min-h-0 flex-1 overflow-hidden py-4">
+              <SubmissionDetails submission={selectedSubmission} />
+            </div>
+          ) : null}
+          <SheetFooter className="border-t">
+            <SheetClose asChild>
+              <Button variant="outline" className="w-full sm:w-auto">
+                Close
+              </Button>
+            </SheetClose>
+          </SheetFooter>
         </SheetContent>
       </Sheet>
 
@@ -472,7 +640,7 @@ export default function HairQuizFormsPage() {
             <AlertDialogTitle>Delete submission?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently remove the hair quiz submission for{" "}
-              <span className="font-medium text-foreground">{deleteTarget?.name}</span>.
+              <span className="font-medium text-foreground">{deleteTarget?.formData.name}</span>.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

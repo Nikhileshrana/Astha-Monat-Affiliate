@@ -25,5 +25,6 @@ export const COLLECTIONS = {
 
   //QUIZ Results collections
   HAIR_QUIZ_FORMS: "HairQuizForms",
+  AFFILIATE_APPLICATIONS: "AffiliateApplications",
 
 } as const;

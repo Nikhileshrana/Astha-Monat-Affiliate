@@ -24,6 +24,8 @@ const isPublicRoute = createRouteMatcher([
   "/",
   "/api/hair-quiz(.*)",
   "/hair-quiz(.*)",
+  "/api/apply-affiliate(.*)",
+  "/apply-affiliate(.*)",
 ]);
 
 // Protected routes fetched securely

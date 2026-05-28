@@ -33,6 +33,11 @@ export const ROUTES_CONFIG: RouteGroup[] = [
         url: "/protected/hairQuizForms",
         requiresAccess: true,
       },
+      {
+        title: "Affiliate Applications",
+        url: "/protected/affiliateApplications",
+        requiresAccess: true,
+      },
     ],
   },
   {

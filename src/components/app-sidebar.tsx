@@ -73,7 +73,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[state=open]:text-sidebar-accent-foreground bg-sidebar-white rounded-md group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:justify-center [&_svg]:size-8! [&_svg]:shrink-0"
             >
               <div className="flex shrink-0 items-center justify-center overflow-hidden bg-white rounded-md -translate-x-0.5 group-data-[collapsible=icon]:translate-x-0">
-                <Image src="/logo.png" alt="ASTHA × MONAT" width={50} height={50} />
+                <Image src="/logo.png" alt="ASTHA × MONAT" width={27} height={27} />
               </div>
               <div className="grid min-w-0 flex-1 gap-0.5 text-left leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="font-semibold truncate tracking-tight text-sm sm:text-base">

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { SiteFooter } from "@/components/website/footer";
 import { Navbar } from "@/components/website/navbar";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Field,
   FieldContent,
@@ -29,12 +30,12 @@ type FormState = {
   hairThickness: string;
   hairTexture: string;
   rootType: string;
-  endsType: string;
+  endsType: string[];
   hasDandruffOrItchyScalp: string;
   washFrequencyPerWeek: string;
   getsFrizzy: string;
   hotToolsFrequency: string;
-  hairlossConcern: string;
+  hairlossConcern: string[];
   currentProducts: string;
   isColorTreated: string;
   ultimateHairGoal: string;
@@ -50,12 +51,12 @@ const INITIAL_FORM: FormState = {
   hairThickness: "",
   hairTexture: "",
   rootType: "",
-  endsType: "",
+  endsType: [],
   hasDandruffOrItchyScalp: "",
   washFrequencyPerWeek: "",
   getsFrizzy: "",
   hotToolsFrequency: "",
-  hairlossConcern: "",
+  hairlossConcern: [],
   currentProducts: "",
   isColorTreated: "",
   ultimateHairGoal: "",
@@ -123,6 +124,63 @@ function RadioQuestion({
             </div>
           ))}
         </RadioGroup>
+        <FieldError>{error}</FieldError>
+      </FieldContent>
+    </Field>
+  );
+}
+
+function CheckboxQuestion({
+  id,
+  label,
+  values,
+  onValuesChange,
+  options,
+  error,
+}: {
+  id: string;
+  label: string;
+  values: string[];
+  onValuesChange: (values: string[]) => void;
+  options: RadioOption[];
+  error?: string;
+}) {
+  const toggleValue = (value: string, checked: boolean) => {
+    if (checked) {
+      onValuesChange([...values, value]);
+      return;
+    }
+    onValuesChange(values.filter((item) => item !== value));
+  };
+
+  return (
+    <Field data-invalid={!!error}>
+      <FieldContent>
+        <FieldLabel htmlFor={id}>
+          {label}
+          <span className="text-destructive"> *</span>
+        </FieldLabel>
+        <div id={id} className="mt-2 space-y-2.5">
+          {options.map((option) => {
+            const checked = values.includes(option.value);
+            return (
+              <div key={option.value} className="flex items-start gap-2.5">
+                <Checkbox
+                  id={`${id}-${option.value}`}
+                  checked={checked}
+                  onCheckedChange={(next) => toggleValue(option.value, next === true)}
+                  aria-invalid={!!error}
+                />
+                <Label
+                  htmlFor={`${id}-${option.value}`}
+                  className="font-normal normal-case tracking-normal"
+                >
+                  {option.label}
+                </Label>
+              </div>
+            );
+          })}
+        </div>
         <FieldError>{error}</FieldError>
       </FieldContent>
     </Field>
@@ -206,11 +264,8 @@ export default function HairQuizPage() {
 
       <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 sm:py-14">
         <div className="mb-8 text-center sm:mb-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-            Discover Your Plan
-          </p>
           <h1 className="mt-3 font-heading text-3xl font-bold tracking-tight sm:text-4xl">
-            Custom Hair Quiz
+            Hair Quiz - Consultation
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             Answer a few questions about your hair so I can recommend the best
@@ -345,11 +400,11 @@ export default function HairQuizPage() {
                   ]}
                 />
 
-                <RadioQuestion
+                <CheckboxQuestion
                   id="endsType"
-                  label="Are your ends"
-                  value={form.endsType}
-                  onValueChange={(value) => updateField("endsType", value)}
+                  label="Are your ends? Check all that apply"
+                  values={form.endsType}
+                  onValuesChange={(values) => updateField("endsType", values)}
                   error={errors.endsType}
                   options={[
                     { value: "dry", label: "Dry" },
@@ -416,11 +471,11 @@ export default function HairQuizPage() {
                   ]}
                 />
 
-                <RadioQuestion
+                <CheckboxQuestion
                   id="hairlossConcern"
-                  label="Do you have hairfall/hair thinning concerns? If yes, what kind"
-                  value={form.hairlossConcern}
-                  onValueChange={(value) => updateField("hairlossConcern", value)}
+                  label="Do you have hairfall/hair thinning concerns? If yes, what kind — check all that apply"
+                  values={form.hairlossConcern}
+                  onValuesChange={(values) => updateField("hairlossConcern", values)}
                   error={errors.hairlossConcern}
                   options={[
                     { value: "overall_thinning", label: "Overall thinning" },
