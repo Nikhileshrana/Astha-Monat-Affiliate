@@ -11,9 +11,9 @@ export default function Page() {
     <div className="min-h-svh antialiased">
       <Navbar />
       <HeroSection />
+      <ProductsSection />
       <TestimonialsCarousel />
       <BeforeAfterSection />
-      <ProductsSection />
       <JourneyCtaSection />
       <SiteFooter />
     </div>

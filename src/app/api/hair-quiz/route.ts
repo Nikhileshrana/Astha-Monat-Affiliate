@@ -1,5 +1,5 @@
-import { isValidPhoneNumber } from "libphonenumber-js";
-import { ObjectId, type SortDirection } from "mongodb";
+import { isValidPhoneNumber, parsePhoneNumber } from "libphonenumber-js";
+import { ObjectId, type Collection, type SortDirection } from "mongodb";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -7,6 +7,11 @@ import { z } from "zod";
 import { auth } from "@/lib/auth/auth";
 import clientPromise, { COLLECTIONS, DB_NAME } from "@/lib/db";
 import { isHairQuizAdmin } from "@/lib/hair-quiz/api-auth";
+import {
+  EMPTY_HAIR_QUIZ_FILTERS,
+  type HairQuizListFilters,
+  parseFiltersFromSearchParams,
+} from "@/lib/hair-quiz/filters";
 import {
   buildSubmissionMeta,
   parseClientContext,
@@ -133,6 +138,106 @@ function serializeDocument(doc: Record<string, unknown>) {
   };
 }
 
+function resolveWhatsappCountry(whatsapp: string) {
+  try {
+    return parsePhoneNumber(whatsapp)?.country;
+  } catch {
+    return undefined;
+  }
+}
+
+function buildLocationFilters(filters: HairQuizListFilters) {
+  const clauses: Record<string, unknown>[] = [];
+
+  if (filters.ipCountry) {
+    clauses.push({
+      "submissionMeta.geo.country": {
+        $regex: `^${escapeRegex(filters.ipCountry)}$`,
+        $options: "i",
+      },
+    });
+  }
+
+  if (filters.ipCity) {
+    clauses.push({
+      "submissionMeta.geo.city": {
+        $regex: `^${escapeRegex(filters.ipCity)}$`,
+        $options: "i",
+      },
+    });
+  }
+
+  if (filters.phoneCountry) {
+    clauses.push({
+      "formData.whatsappCountry": filters.phoneCountry.toUpperCase(),
+    });
+  }
+
+  return clauses;
+}
+
+function buildFormFilters(filters: HairQuizListFilters) {
+  const clauses: Record<string, unknown>[] = [];
+  const scalarKeys = [
+    "hairThickness",
+    "hairTexture",
+    "rootType",
+    "hasDandruffOrItchyScalp",
+    "getsFrizzy",
+    "hotToolsFrequency",
+    "isColorTreated",
+    "contactPreference",
+    "budget",
+  ] as const;
+
+  for (const key of scalarKeys) {
+    if (filters[key].length > 0) {
+      clauses.push({ [`formData.${key}`]: { $in: filters[key] } });
+    }
+  }
+
+  const arrayKeys = ["endsType", "hairlossConcern"] as const;
+  for (const key of arrayKeys) {
+    if (filters[key].length > 0) {
+      clauses.push({ [`formData.${key}`]: { $in: filters[key] } });
+    }
+  }
+
+  return clauses;
+}
+
+function buildListQuery(search?: string, filters: HairQuizListFilters = EMPTY_HAIR_QUIZ_FILTERS) {
+  const parts: Record<string, unknown>[] = [];
+  const searchQuery = buildSearchQuery(search);
+
+  if (Object.keys(searchQuery).length > 0) parts.push(searchQuery);
+  parts.push(...buildLocationFilters(filters), ...buildFormFilters(filters));
+
+  if (parts.length === 0) return {};
+  if (parts.length === 1) return parts[0];
+  return { $and: parts };
+}
+
+async function getFilterOptions(collection: Collection) {
+  const [ipCountries, ipCities, phoneCountries] = await Promise.all([
+    collection.distinct("submissionMeta.geo.country", {
+      "submissionMeta.geo.country": { $exists: true, $nin: [null, ""] },
+    }),
+    collection.distinct("submissionMeta.geo.city", {
+      "submissionMeta.geo.city": { $exists: true, $nin: [null, ""] },
+    }),
+    collection.distinct("formData.whatsappCountry", {
+      "formData.whatsappCountry": { $exists: true, $nin: [null, ""] },
+    }),
+  ]);
+
+  return {
+    ipCountries: ipCountries.filter(Boolean).sort(),
+    ipCities: ipCities.filter(Boolean).sort(),
+    phoneCountries: phoneCountries.filter(Boolean).sort(),
+  };
+}
+
 function buildSearchQuery(search?: string) {
   if (!search) return {};
 
@@ -182,8 +287,13 @@ export async function POST(req: NextRequest) {
       parseClientContext(rawClientContext),
     );
 
+    const whatsappCountry = resolveWhatsappCountry(parsed.data.whatsapp);
+
     const result = await db.collection(COLLECTIONS.HAIR_QUIZ_FORMS).insertOne({
-      formData: parsed.data,
+      formData: {
+        ...parsed.data,
+        ...(whatsappCountry ? { whatsappCountry } : {}),
+      },
       submissionMeta,
       createdAt: now,
       updatedAt: now,
@@ -210,6 +320,15 @@ export async function GET(req: NextRequest) {
     }
 
     const url = new URL(req.url);
+
+    if (url.searchParams.get("filterOptions") === "true") {
+      const client = await clientPromise;
+      const db = client.db(DB_NAME);
+      const collection = db.collection(COLLECTIONS.HAIR_QUIZ_FORMS);
+      const filterOptions = await getFilterOptions(collection);
+      return NextResponse.json({ filterOptions });
+    }
+
     const parsedQuery = listQuerySchema.safeParse({
       id: url.searchParams.get("id") ?? undefined,
       search: url.searchParams.get("search") ?? undefined,
@@ -228,6 +347,7 @@ export async function GET(req: NextRequest) {
     }
 
     const { id, search, page, limit, sortBy, sortOrder, cursor } = parsedQuery.data;
+    const filters = parseFiltersFromSearchParams(url.searchParams);
     const client = await clientPromise;
     const db = client.db(DB_NAME);
     const collection = db.collection(COLLECTIONS.HAIR_QUIZ_FORMS);
@@ -245,7 +365,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ data: serializeDocument(document) });
     }
 
-    const query = buildSearchQuery(search);
+    const query = buildListQuery(search, filters);
     const sortDirection: SortDirection = sortOrder === "asc" ? 1 : -1;
     const sortField = resolveSortField(sortBy);
     const sort = {
@@ -388,11 +508,18 @@ export async function PUT(req: NextRequest) {
     const client = await clientPromise;
     const db = client.db(DB_NAME);
 
+    const whatsappCountry = parsed.data.whatsapp
+      ? resolveWhatsappCountry(parsed.data.whatsapp)
+      : undefined;
+
     const result = await db.collection(COLLECTIONS.HAIR_QUIZ_FORMS).updateOne(
       { _id: new ObjectId(id) },
       {
         $set: {
-          formData: parsed.data,
+          formData: {
+            ...parsed.data,
+            ...(whatsappCountry ? { whatsappCountry } : {}),
+          },
           updatedAt: new Date(),
         },
       },

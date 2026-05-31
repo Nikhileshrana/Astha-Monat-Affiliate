@@ -30,6 +30,13 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { HairQuizFiltersPanel } from "@/app/(software)/protected/hairQuizForms/filters-panel";
+import {
+  appendFiltersToSearchParams,
+  EMPTY_HAIR_QUIZ_FILTERS,
+  type HairQuizFilterOptions,
+  type HairQuizListFilters,
+} from "@/lib/hair-quiz/filters";
 
 type SubmissionMeta = {
   capturedAt?: string;
@@ -69,6 +76,7 @@ type HairQuizFormData = {
   name: string;
   email: string;
   whatsapp: string;
+  whatsappCountry?: string;
   instagramUsername: string;
   hairThickness: string;
   hairTexture: string;
@@ -308,6 +316,7 @@ function SubmissionDetails({ submission }: { submission: HairQuizSubmission }) {
             <DetailRow label="Name" value={form.name} />
             <DetailRow label="Email" value={form.email} />
             <DetailRow label="WhatsApp" value={form.whatsapp} />
+            <DetailRow label="Phone country" value={form.whatsappCountry} />
             <DetailRow label="Instagram" value={`@${form.instagramUsername}`} />
             <DetailRow label="Contact preference" value={form.contactPreference} />
           </dl>
@@ -406,6 +415,14 @@ export default function HairQuizFormsPage() {
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [appliedFilters, setAppliedFilters] = useState<HairQuizListFilters>(
+    EMPTY_HAIR_QUIZ_FILTERS,
+  );
+  const [filterOptions, setFilterOptions] = useState<HairQuizFilterOptions>({
+    ipCountries: [],
+    ipCities: [],
+    phoneCountries: [],
+  });
   const [selectedSubmission, setSelectedSubmission] = useState<HairQuizSubmission | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<HairQuizSubmission | null>(null);
 
@@ -414,8 +431,29 @@ export default function HairQuizFormsPage() {
     return () => clearTimeout(timer);
   }, [searchValue]);
 
+  const fetchFilterOptions = useCallback(async () => {
+    try {
+      const res = await fetch("/api/hair-quiz?filterOptions=true");
+      const json = await res.json();
+      if (res.ok && json.filterOptions) {
+        setFilterOptions(json.filterOptions);
+      }
+    } catch {
+      // Non-blocking: enum filters still work without dynamic location options.
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFilterOptions();
+  }, [fetchFilterOptions]);
+
   const fetchSubmissions = useCallback(
-    async (pageIdx = 0, limit = 10, search = "") => {
+    async (
+      pageIdx = 0,
+      limit = 10,
+      search = "",
+      filters: HairQuizListFilters = EMPTY_HAIR_QUIZ_FILTERS,
+    ) => {
       try {
         setLoading(true);
         const params = new URLSearchParams({
@@ -425,6 +463,7 @@ export default function HairQuizFormsPage() {
           sortOrder: "desc",
         });
         if (search) params.set("search", search);
+        appendFiltersToSearchParams(params, filters);
 
         const res = await fetch(`/api/hair-quiz?${params.toString()}`);
         const json = await res.json();
@@ -447,8 +486,19 @@ export default function HairQuizFormsPage() {
   );
 
   useEffect(() => {
-    fetchSubmissions(pagination.pageIndex, pagination.pageSize, debouncedSearch);
-  }, [pagination.pageIndex, pagination.pageSize, debouncedSearch, fetchSubmissions]);
+    fetchSubmissions(
+      pagination.pageIndex,
+      pagination.pageSize,
+      debouncedSearch,
+      appliedFilters,
+    );
+  }, [
+    pagination.pageIndex,
+    pagination.pageSize,
+    debouncedSearch,
+    appliedFilters,
+    fetchSubmissions,
+  ]);
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
@@ -476,7 +526,13 @@ export default function HairQuizFormsPage() {
       if (selectedSubmission?._id === deleteTarget._id) {
         setSelectedSubmission(null);
       }
-      fetchSubmissions(pagination.pageIndex, pagination.pageSize, debouncedSearch);
+      fetchSubmissions(
+        pagination.pageIndex,
+        pagination.pageSize,
+        debouncedSearch,
+        appliedFilters,
+      );
+      fetchFilterOptions();
     } catch {
       toast.error("Network error");
     } finally {
@@ -538,13 +594,31 @@ export default function HairQuizFormsPage() {
       ),
     },
     {
-      id: "location",
-      header: "Location",
-      cell: ({ row }) => {
-        const geo = row.original.submissionMeta?.geo;
-        const label = [geo?.city, geo?.country].filter(Boolean).join(", ");
-        return <div className="text-sm text-muted-foreground">{label || "—"}</div>;
-      },
+      id: "ipCountry",
+      header: "IP Country",
+      cell: ({ row }) => (
+        <div className="text-sm text-muted-foreground">
+          {row.original.submissionMeta?.geo?.country || "—"}
+        </div>
+      ),
+    },
+    {
+      id: "ipCity",
+      header: "IP City",
+      cell: ({ row }) => (
+        <div className="text-sm text-muted-foreground">
+          {row.original.submissionMeta?.geo?.city || "—"}
+        </div>
+      ),
+    },
+    {
+      id: "phoneCountry",
+      header: "Phone Country",
+      cell: ({ row }) => (
+        <div className="text-sm text-muted-foreground">
+          {row.original.formData.whatsappCountry || "—"}
+        </div>
+      ),
     },
     {
       id: "actions",
@@ -597,6 +671,16 @@ export default function HairQuizFormsPage() {
         onSearchChange={setSearchValue}
         totalItems={totalItems}
         defaultPageSize={10}
+        leftActions={
+          <HairQuizFiltersPanel
+            appliedFilters={appliedFilters}
+            filterOptions={filterOptions}
+            onApply={(filters) => {
+              setAppliedFilters(filters);
+              setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+            }}
+          />
+        }
       />
 
       <Sheet
