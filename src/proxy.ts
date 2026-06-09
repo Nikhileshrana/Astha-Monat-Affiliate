@@ -25,6 +25,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/hair-quiz(.*)",
   "/hair-quiz(.*)",
   "/api/apply-affiliate(.*)",
+  "/api/instagram-oembed(.*)",
   "/apply-affiliate(.*)",
 ]);
 

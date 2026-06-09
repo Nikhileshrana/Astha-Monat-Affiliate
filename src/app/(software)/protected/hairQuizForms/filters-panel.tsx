@@ -26,48 +26,18 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { countActiveFilters } from "@/lib/hair-quiz/queries";
 import {
-  countActiveFilters,
   EMPTY_HAIR_QUIZ_FILTERS,
+  FIELD_LABELS,
   FILTER_ENUMS,
   type HairQuizFilterOptions,
   type HairQuizListFilters,
-} from "@/lib/hair-quiz/filters";
+} from "@/lib/hair-quiz/schema";
 
-const FILTER_LABELS: Record<string, string> = {
-  thin: "Thin",
-  medium: "Medium",
-  thick: "Thick",
-  wavy: "Wavy",
-  straight: "Straight",
-  curly: "Curly",
-  oily_24_48_hours: "Oily (24–48h)",
-  dry: "Dry",
-  oily_3_4_days: "Oily in 3–4 days",
-  damaged: "Damaged",
-  split: "Split",
-  all_of_the_above: "All of the above",
-  yes: "Yes",
-  no: "No",
-  weekly: "Weekly",
-  every_other_day: "Every other day",
-  twice_a_month: "Twice a month",
-  very_rarely: "Very rarely",
-  overall_thinning: "Overall thinning",
-  postpartum_or_post_covid: "Postpartum / Post Covid",
-  bald_spots: "Bald spots",
-  receding_hairline: "Receding hairline",
-  none: "No hairloss",
-  "150_170": "$150–$170",
-  "175_200": "$175–$200",
-  "250_plus": "$250+",
-  instagram: "Instagram",
-  whatsapp: "WhatsApp",
-};
-
-const SECTIONS: {
+const FORM_FILTER_SECTIONS: {
   title: string;
-  key: keyof typeof FILTER_ENUMS;
+  key: Exclude<keyof typeof FILTER_ENUMS, "treatmentStatus">;
 }[] = [
   { title: "Contact preference", key: "contactPreference" },
   { title: "Budget", key: "budget" },
@@ -112,7 +82,7 @@ function CheckboxGroup({
             htmlFor={`${id}-${option}`}
             className="font-normal normal-case tracking-normal"
           >
-            {FILTER_LABELS[option] ?? option}
+            {FIELD_LABELS[option] ?? option}
           </Label>
         </div>
       ))}
@@ -138,17 +108,6 @@ export function HairQuizFiltersPanel({
     if (open) setDraft(appliedFilters);
   }, [open, appliedFilters]);
 
-  const handleApply = () => {
-    onApply(draft);
-    setOpen(false);
-  };
-
-  const handleClear = () => {
-    setDraft(EMPTY_HAIR_QUIZ_FILTERS);
-    onApply(EMPTY_HAIR_QUIZ_FILTERS);
-    setOpen(false);
-  };
-
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
@@ -170,98 +129,71 @@ export function HairQuizFiltersPanel({
         <SheetHeader className="border-b">
           <SheetTitle>Filter submissions</SheetTitle>
           <SheetDescription>
-            Narrow results by location, hair profile, budget, and contact preference.
-            {draftCount > 0 ? ` ${draftCount} filter${draftCount === 1 ? "" : "s"} selected.` : ""}
+            Location, status, hair profile, budget, and contact preference.
+            {draftCount > 0 ? ` ${draftCount} active.` : ""}
           </SheetDescription>
         </SheetHeader>
 
         <div className="min-h-0 flex-1 overflow-hidden">
           <ScrollArea className="h-full">
             <div className="space-y-5 p-4">
-              <section className="space-y-3">
+              <section className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Location
+                  Treatment status
                 </p>
-
-                <div className="space-y-2">
-                  <Label className="text-xs">IP country</Label>
-                  <Select
-                    value={draft.ipCountry || "__all__"}
-                    onValueChange={(value) =>
-                      setDraft((prev) => ({
-                        ...prev,
-                        ipCountry: value === "__all__" ? "" : value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="All countries" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">All countries</SelectItem>
-                      {filterOptions.ipCountries.map((country) => (
-                        <SelectItem key={country} value={country}>
-                          {country}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-xs">IP city</Label>
-                  <Select
-                    value={draft.ipCity || "__all__"}
-                    onValueChange={(value) =>
-                      setDraft((prev) => ({
-                        ...prev,
-                        ipCity: value === "__all__" ? "" : value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="All cities" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">All cities</SelectItem>
-                      {filterOptions.ipCities.map((city) => (
-                        <SelectItem key={city} value={city}>
-                          {city}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-xs">Phone country</Label>
-                  <Select
-                    value={draft.phoneCountry || "__all__"}
-                    onValueChange={(value) =>
-                      setDraft((prev) => ({
-                        ...prev,
-                        phoneCountry: value === "__all__" ? "" : value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="All phone countries" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">All phone countries</SelectItem>
-                      {filterOptions.phoneCountries.map((country) => (
-                        <SelectItem key={country} value={country}>
-                          {country}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <CheckboxGroup
+                  id="treatmentStatus"
+                  options={FILTER_ENUMS.treatmentStatus}
+                  values={draft.treatmentStatus}
+                  onChange={(values) =>
+                    setDraft((prev) => ({ ...prev, treatmentStatus: values }))
+                  }
+                />
               </section>
 
               <Separator />
 
-              {SECTIONS.map((section) => (
+              <section className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Location
+                </p>
+                {(
+                  [
+                    ["IP country", "ipCountry", filterOptions.ipCountries],
+                    ["IP city", "ipCity", filterOptions.ipCities],
+                    ["Phone country", "phoneCountry", filterOptions.phoneCountries],
+                  ] as const
+                ).map(([label, key, options]) => (
+                  <div key={key} className="space-y-2">
+                    <Label className="text-xs">{label}</Label>
+                    <Select
+                      value={draft[key] || "__all__"}
+                      onValueChange={(value) =>
+                        setDraft((prev) => ({
+                          ...prev,
+                          [key]: value === "__all__" ? "" : value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={`All ${label.toLowerCase()}s`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all__">All</SelectItem>
+                        {options.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </section>
+
+              <Separator />
+
+              {FORM_FILTER_SECTIONS.map((section) => (
                 <section key={section.key} className="space-y-2">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     {section.title}
@@ -300,11 +232,21 @@ export function HairQuizFiltersPanel({
               type="button"
               variant="outline"
               className="w-full sm:w-auto"
-              onClick={handleClear}
+              onClick={() => {
+                onApply(EMPTY_HAIR_QUIZ_FILTERS);
+                setOpen(false);
+              }}
             >
               Clear all
             </Button>
-            <Button type="button" className="w-full sm:w-auto" onClick={handleApply}>
+            <Button
+              type="button"
+              className="w-full sm:w-auto"
+              onClick={() => {
+                onApply(draft);
+                setOpen(false);
+              }}
+            >
               Apply filters
             </Button>
           </div>

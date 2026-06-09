@@ -1,5 +1,5 @@
 import { isValidPhoneNumber, parsePhoneNumber } from "libphonenumber-js";
-import { ObjectId, type Collection, type SortDirection } from "mongodb";
+import { ObjectId, type Collection } from "mongodb";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -8,19 +8,34 @@ import { auth } from "@/lib/auth/auth";
 import clientPromise, { COLLECTIONS, DB_NAME } from "@/lib/db";
 import { isHairQuizAdmin } from "@/lib/hair-quiz/api-auth";
 import {
-  EMPTY_HAIR_QUIZ_FILTERS,
-  type HairQuizListFilters,
+  buildHairQuizListQuery,
+  getHairQuizFilterOptions,
   parseFiltersFromSearchParams,
-} from "@/lib/hair-quiz/filters";
+} from "@/lib/hair-quiz/queries";
+import {
+  buildHairQuizCsv,
+  DEFAULT_ADMIN_TRACKING,
+  HAIR_QUIZ_CSV_EXPORT_LIMIT,
+  normalizeAdminTracking,
+  TREATMENT_STATUSES,
+} from "@/lib/hair-quiz/schema";
+import {
+  buildAfterCursorFilter,
+  buildListSort,
+  ensureHairQuizIndexes,
+  getDocumentSortValue,
+  mergeQuery,
+  resolveListSortField,
+  serializeHairQuizDocument,
+  type ListSortBy,
+} from "@/lib/hair-quiz/server";
 import {
   buildSubmissionMeta,
   parseClientContext,
 } from "@/lib/request-metadata";
 
-const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
-const MAX_SKIP = 50_000;
 
 const hairQuizFormSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -74,34 +89,34 @@ const hairQuizFormSchema = z.object({
 const listQuerySchema = z.object({
   id: z.string().trim().optional(),
   search: z.string().trim().max(200).optional(),
-  page: z.coerce.number().int().min(1).default(DEFAULT_PAGE),
   limit: z.coerce.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT),
+  cursor: z.string().trim().optional(),
   sortBy: z.enum(["createdAt", "updatedAt", "name"]).default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
-  cursor: z.string().trim().optional(),
+  includeTotal: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((value) => value === "true"),
 });
 
-type HairQuizFormInput = z.infer<typeof hairQuizFormSchema>;
-
-function resolveSortField(sortBy: "createdAt" | "updatedAt" | "name") {
-  return sortBy === "name" ? "formData.name" : sortBy;
-}
-
-function getDocumentSortValue(
-  doc: Record<string, unknown>,
-  sortField: string,
-) {
-  if (!sortField.includes(".")) {
-    return doc[sortField];
-  }
-
-  return sortField.split(".").reduce<unknown>((acc, key) => {
-    if (acc && typeof acc === "object" && key in acc) {
-      return (acc as Record<string, unknown>)[key];
-    }
-    return undefined;
-  }, doc);
-}
+const adminPatchSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    treatmentStatus: z.enum(TREATMENT_STATUSES).optional(),
+    markOutreach: z.enum(["whatsapp", "instagram"]).optional(),
+    addNote: z.string().trim().min(1).max(2000).optional(),
+    followUpAt: z.string().trim().optional(),
+    clearFollowUp: z.boolean().optional(),
+  })
+  .refine(
+    (data) =>
+      data.treatmentStatus ||
+      data.markOutreach ||
+      data.addNote ||
+      data.followUpAt !== undefined ||
+      data.clearFollowUp,
+    { message: "Provide at least one field to update" },
+  );
 
 function normalizeInstagramUsername(value: string) {
   return value.trim().replace(/^@+/, "");
@@ -122,134 +137,12 @@ function parseHairQuizPayload(body: unknown) {
   });
 }
 
-function escapeRegex(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function serializeDocument(doc: Record<string, unknown>) {
-  return {
-    _id: doc._id instanceof ObjectId ? doc._id.toString() : doc._id,
-    formData: doc.formData,
-    submissionMeta: doc.submissionMeta,
-    createdAt:
-      doc.createdAt instanceof Date ? doc.createdAt.toISOString() : doc.createdAt,
-    updatedAt:
-      doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : doc.updatedAt,
-  };
-}
-
 function resolveWhatsappCountry(whatsapp: string) {
   try {
     return parsePhoneNumber(whatsapp)?.country;
   } catch {
     return undefined;
   }
-}
-
-function buildLocationFilters(filters: HairQuizListFilters) {
-  const clauses: Record<string, unknown>[] = [];
-
-  if (filters.ipCountry) {
-    clauses.push({
-      "submissionMeta.geo.country": {
-        $regex: `^${escapeRegex(filters.ipCountry)}$`,
-        $options: "i",
-      },
-    });
-  }
-
-  if (filters.ipCity) {
-    clauses.push({
-      "submissionMeta.geo.city": {
-        $regex: `^${escapeRegex(filters.ipCity)}$`,
-        $options: "i",
-      },
-    });
-  }
-
-  if (filters.phoneCountry) {
-    clauses.push({
-      "formData.whatsappCountry": filters.phoneCountry.toUpperCase(),
-    });
-  }
-
-  return clauses;
-}
-
-function buildFormFilters(filters: HairQuizListFilters) {
-  const clauses: Record<string, unknown>[] = [];
-  const scalarKeys = [
-    "hairThickness",
-    "hairTexture",
-    "rootType",
-    "hasDandruffOrItchyScalp",
-    "getsFrizzy",
-    "hotToolsFrequency",
-    "isColorTreated",
-    "contactPreference",
-    "budget",
-  ] as const;
-
-  for (const key of scalarKeys) {
-    if (filters[key].length > 0) {
-      clauses.push({ [`formData.${key}`]: { $in: filters[key] } });
-    }
-  }
-
-  const arrayKeys = ["endsType", "hairlossConcern"] as const;
-  for (const key of arrayKeys) {
-    if (filters[key].length > 0) {
-      clauses.push({ [`formData.${key}`]: { $in: filters[key] } });
-    }
-  }
-
-  return clauses;
-}
-
-function buildListQuery(search?: string, filters: HairQuizListFilters = EMPTY_HAIR_QUIZ_FILTERS) {
-  const parts: Record<string, unknown>[] = [];
-  const searchQuery = buildSearchQuery(search);
-
-  if (Object.keys(searchQuery).length > 0) parts.push(searchQuery);
-  parts.push(...buildLocationFilters(filters), ...buildFormFilters(filters));
-
-  if (parts.length === 0) return {};
-  if (parts.length === 1) return parts[0];
-  return { $and: parts };
-}
-
-async function getFilterOptions(collection: Collection) {
-  const [ipCountries, ipCities, phoneCountries] = await Promise.all([
-    collection.distinct("submissionMeta.geo.country", {
-      "submissionMeta.geo.country": { $exists: true, $nin: [null, ""] },
-    }),
-    collection.distinct("submissionMeta.geo.city", {
-      "submissionMeta.geo.city": { $exists: true, $nin: [null, ""] },
-    }),
-    collection.distinct("formData.whatsappCountry", {
-      "formData.whatsappCountry": { $exists: true, $nin: [null, ""] },
-    }),
-  ]);
-
-  return {
-    ipCountries: ipCountries.filter(Boolean).sort(),
-    ipCities: ipCities.filter(Boolean).sort(),
-    phoneCountries: phoneCountries.filter(Boolean).sort(),
-  };
-}
-
-function buildSearchQuery(search?: string) {
-  if (!search) return {};
-
-  const pattern = escapeRegex(search);
-  return {
-    $or: [
-      { "formData.name": { $regex: pattern, $options: "i" } },
-      { "formData.email": { $regex: pattern, $options: "i" } },
-      { "formData.instagramUsername": { $regex: pattern, $options: "i" } },
-      { "formData.whatsapp": { $regex: pattern, $options: "i" } },
-    ],
-  };
 }
 
 async function requireAdminSession() {
@@ -262,6 +155,53 @@ async function requireAdminSession() {
   }
 
   return session;
+}
+
+async function getCollection() {
+  const client = await clientPromise;
+  const collection = client.db(DB_NAME).collection(COLLECTIONS.HAIR_QUIZ_FORMS);
+  await ensureHairQuizIndexes(collection);
+  return collection;
+}
+
+async function exportHairQuizCsv(
+  collection: Collection,
+  query: Record<string, unknown>,
+) {
+  const submissions = [];
+  let lastId: ObjectId | null = null;
+
+  while (submissions.length < HAIR_QUIZ_CSV_EXPORT_LIMIT) {
+    const batchQuery =
+      lastId && Object.keys(query).length
+        ? { $and: [query, { _id: { $lt: lastId } }] }
+        : lastId
+          ? { _id: { $lt: lastId } }
+          : query;
+
+    const batch = await collection
+      .find(batchQuery)
+      .sort({ _id: -1 })
+      .limit(Math.min(500, HAIR_QUIZ_CSV_EXPORT_LIMIT - submissions.length))
+      .toArray();
+
+    if (batch.length === 0) break;
+
+    for (const doc of batch) {
+      submissions.push(serializeHairQuizDocument(doc));
+    }
+
+    lastId = batch[batch.length - 1]?._id as ObjectId;
+  }
+
+  const filename = `hair-quiz-submissions-${new Date().toISOString().slice(0, 10)}.csv`;
+
+  return new NextResponse(buildHairQuizCsv(submissions), {
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+    },
+  });
 }
 
 /** Public form submission. */
@@ -280,30 +220,26 @@ export async function POST(req: NextRequest) {
     }
 
     const now = new Date();
-    const client = await clientPromise;
-    const db = client.db(DB_NAME);
+    const collection = await getCollection();
     const submissionMeta = buildSubmissionMeta(
       req,
       parseClientContext(rawClientContext),
     );
-
     const whatsappCountry = resolveWhatsappCountry(parsed.data.whatsapp);
 
-    const result = await db.collection(COLLECTIONS.HAIR_QUIZ_FORMS).insertOne({
+    const result = await collection.insertOne({
       formData: {
         ...parsed.data,
         ...(whatsappCountry ? { whatsappCountry } : {}),
       },
       submissionMeta,
+      adminTracking: DEFAULT_ADMIN_TRACKING,
       createdAt: now,
       updatedAt: now,
     });
 
     return NextResponse.json(
-      {
-        message: "Hair quiz submitted successfully",
-        id: result.insertedId.toString(),
-      },
+      { message: "Hair quiz submitted successfully", id: result.insertedId.toString() },
       { status: 201 },
     );
   } catch (error) {
@@ -312,7 +248,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-/** Protected paginated list/read for admin CRUD. */
+/** Admin list, read, filter options, CSV export. */
 export async function GET(req: NextRequest) {
   try {
     if (!(await requireAdminSession())) {
@@ -320,23 +256,29 @@ export async function GET(req: NextRequest) {
     }
 
     const url = new URL(req.url);
+    const collection = await getCollection();
 
     if (url.searchParams.get("filterOptions") === "true") {
-      const client = await clientPromise;
-      const db = client.db(DB_NAME);
-      const collection = db.collection(COLLECTIONS.HAIR_QUIZ_FORMS);
-      const filterOptions = await getFilterOptions(collection);
-      return NextResponse.json({ filterOptions });
+      return NextResponse.json({
+        filterOptions: await getHairQuizFilterOptions(collection),
+      });
+    }
+
+    const filters = parseFiltersFromSearchParams(url.searchParams);
+    const search = url.searchParams.get("search")?.trim() || undefined;
+
+    if (url.searchParams.get("export") === "csv") {
+      return exportHairQuizCsv(collection, buildHairQuizListQuery(search, filters));
     }
 
     const parsedQuery = listQuerySchema.safeParse({
       id: url.searchParams.get("id") ?? undefined,
       search: url.searchParams.get("search") ?? undefined,
-      page: url.searchParams.get("page") ?? undefined,
       limit: url.searchParams.get("limit") ?? undefined,
+      cursor: url.searchParams.get("cursor") ?? undefined,
       sortBy: url.searchParams.get("sortBy") ?? undefined,
       sortOrder: url.searchParams.get("sortOrder") ?? undefined,
-      cursor: url.searchParams.get("cursor") ?? undefined,
+      includeTotal: url.searchParams.get("includeTotal") ?? undefined,
     });
 
     if (!parsedQuery.success) {
@@ -346,11 +288,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { id, search, page, limit, sortBy, sortOrder, cursor } = parsedQuery.data;
-    const filters = parseFiltersFromSearchParams(url.searchParams);
-    const client = await clientPromise;
-    const db = client.db(DB_NAME);
-    const collection = db.collection(COLLECTIONS.HAIR_QUIZ_FORMS);
+    const { id, limit, cursor, sortBy, sortOrder, includeTotal } = parsedQuery.data;
 
     if (id) {
       if (!ObjectId.isValid(id)) {
@@ -362,16 +300,14 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Not found" }, { status: 404 });
       }
 
-      return NextResponse.json({ data: serializeDocument(document) });
+      return NextResponse.json({ data: serializeHairQuizDocument(document) });
     }
 
-    const query = buildListQuery(search, filters);
-    const sortDirection: SortDirection = sortOrder === "asc" ? 1 : -1;
-    const sortField = resolveSortField(sortBy);
-    const sort = {
-      [sortField]: sortDirection,
-      _id: sortDirection,
-    } as Record<string, SortDirection>;
+    const baseQuery = buildHairQuizListQuery(search, filters);
+    const sort = buildListSort(sortBy as ListSortBy, sortOrder);
+    const sortField = resolveListSortField(sortBy as ListSortBy);
+
+    let query = baseQuery;
 
     if (cursor) {
       if (!ObjectId.isValid(cursor)) {
@@ -387,94 +323,45 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Cursor not found" }, { status: 404 });
       }
 
-      const cursorValue = getDocumentSortValue(cursorDoc, sortField);
-
-      const cursorFilter =
-        sortOrder === "desc"
-          ? {
-              $or: [
-                { [sortField]: { $lt: cursorValue } },
-                {
-                  [sortField]: cursorValue,
-                  _id: { $lt: new ObjectId(cursor) },
-                },
-              ],
-            }
-          : {
-              $or: [
-                { [sortField]: { $gt: cursorValue } },
-                {
-                  [sortField]: cursorValue,
-                  _id: { $gt: new ObjectId(cursor) },
-                },
-              ],
-            };
-
-      const cursorQuery = Object.keys(query).length
-        ? { $and: [query, cursorFilter] }
-        : cursorFilter;
-
-      const items = await collection
-        .find(cursorQuery)
-        .sort(sort)
-        .limit(limit + 1)
-        .toArray();
-
-      const hasNextPage = items.length > limit;
-      const pageItems = hasNextPage ? items.slice(0, limit) : items;
-      const nextCursor = hasNextPage
-        ? pageItems[pageItems.length - 1]?._id?.toString()
-        : null;
-
-      return NextResponse.json({
-        data: pageItems.map((item) => serializeDocument(item)),
-        pagination: {
-          mode: "cursor",
-          limit,
-          sortBy,
+      query = mergeQuery(
+        baseQuery,
+        buildAfterCursorFilter(
+          new ObjectId(cursor),
+          getDocumentSortValue(cursorDoc, sortField),
+          sortField,
           sortOrder,
-          hasNextPage,
-          hasPreviousPage: Boolean(cursor),
-          nextCursor,
-          count: pageItems.length,
-        },
-      });
-    }
-
-    const skip = (page - 1) * limit;
-    if (skip > MAX_SKIP) {
-      return NextResponse.json(
-        {
-          error: `Offset too large. Use cursor pagination with ?cursor=<id> beyond page ${Math.floor(MAX_SKIP / limit) + 1}.`,
-        },
-        { status: 400 },
+        ),
       );
     }
 
     const [items, total] = await Promise.all([
-      collection.find(query).sort(sort).skip(skip).limit(limit).toArray(),
-      collection.countDocuments(query),
+      collection
+        .find(query)
+        .sort(sort)
+        .limit(limit + 1)
+        .toArray(),
+      includeTotal ? collection.countDocuments(baseQuery) : Promise.resolve(undefined),
     ]);
 
-    const pageCount = total === 0 ? 0 : Math.ceil(total / limit);
-    const hasNextPage = page < pageCount;
-    const hasPreviousPage = page > 1;
-    const nextCursor = hasNextPage ? items[items.length - 1]?._id?.toString() : null;
+    const hasNextPage = items.length > limit;
+    const pageItems = hasNextPage ? items.slice(0, limit) : items;
+    const nextCursor = hasNextPage
+      ? pageItems[pageItems.length - 1]?._id?.toString() ?? null
+      : null;
+    const pageCount =
+      typeof total === "number" && total > 0 ? Math.ceil(total / limit) : undefined;
 
     return NextResponse.json({
-      data: items.map((item) => serializeDocument(item)),
+      data: pageItems.map((item) => serializeHairQuizDocument(item)),
       pagination: {
-        mode: "offset",
-        page,
         limit,
-        total,
-        pageCount,
         sortBy,
         sortOrder,
-        hasNextPage,
-        hasPreviousPage,
         nextCursor,
-        count: items.length,
+        hasNextPage,
+        hasPreviousPage: Boolean(cursor),
+        ...(typeof total === "number" ? { total, pageCount } : {}),
+        count: pageItems.length,
       },
     });
   } catch (error) {
@@ -483,21 +370,15 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/** Protected update for admin CRUD. */
-export async function PUT(req: NextRequest) {
+/** Admin workflow updates: status, outreach, notes, follow-up. */
+export async function PATCH(req: NextRequest) {
   try {
-    if (!(await requireAdminSession())) {
+    const session = await requireAdminSession();
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { id, ...rest } = body as { id?: string } & Partial<HairQuizFormInput>;
-
-    if (!id || !ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Valid id is required" }, { status: 400 });
-    }
-
-    const parsed = parseHairQuizPayload(rest);
+    const parsed = adminPatchSchema.safeParse(await req.json());
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Validation failed", details: parsed.error.flatten() },
@@ -505,38 +386,77 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const client = await clientPromise;
-    const db = client.db(DB_NAME);
+    const { id, treatmentStatus, markOutreach, addNote, followUpAt, clearFollowUp } =
+      parsed.data;
 
-    const whatsappCountry = parsed.data.whatsapp
-      ? resolveWhatsappCountry(parsed.data.whatsapp)
-      : undefined;
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json({ error: "Valid id is required" }, { status: 400 });
+    }
 
-    const result = await db.collection(COLLECTIONS.HAIR_QUIZ_FORMS).updateOne(
-      { _id: new ObjectId(id) },
-      {
-        $set: {
-          formData: {
-            ...parsed.data,
-            ...(whatsappCountry ? { whatsappCountry } : {}),
-          },
-          updatedAt: new Date(),
-        },
-      },
-    );
+    const collection = await getCollection();
+    const now = new Date();
+    const existing = await collection.findOne({ _id: new ObjectId(id) });
 
-    if (result.matchedCount === 0) {
+    if (!existing) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ message: "Hair quiz updated successfully" });
+    const adminTracking = normalizeAdminTracking(existing.adminTracking);
+
+    if (treatmentStatus) {
+      adminTracking.treatmentStatus = treatmentStatus;
+    }
+
+    if (markOutreach === "whatsapp") {
+      adminTracking.whatsappAt = now.toISOString();
+    }
+
+    if (markOutreach === "instagram") {
+      adminTracking.instagramAt = now.toISOString();
+    }
+
+    if (clearFollowUp) {
+      adminTracking.followUpAt = null;
+    } else if (followUpAt !== undefined) {
+      const parsedFollowUp = new Date(followUpAt);
+      if (Number.isNaN(parsedFollowUp.getTime())) {
+        return NextResponse.json({ error: "Invalid followUpAt" }, { status: 400 });
+      }
+      adminTracking.followUpAt = parsedFollowUp.toISOString();
+    }
+
+    if (addNote) {
+      adminTracking.notes = [
+        {
+          text: addNote,
+          createdAt: now.toISOString(),
+          createdBy: session.user.email ?? session.user.name ?? undefined,
+        },
+        ...adminTracking.notes,
+      ].slice(0, 100);
+    }
+
+    await collection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { adminTracking, updatedAt: now } },
+    );
+
+    const updated = await collection.findOne({ _id: new ObjectId(id) });
+    if (!updated) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      message: "Submission updated",
+      data: serializeHairQuizDocument(updated),
+    });
   } catch (error) {
-    console.error("Error updating hair quiz:", error);
+    console.error("Error patching hair quiz admin tracking:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
-/** Protected delete for admin CRUD. */
+/** Admin delete. */
 export async function DELETE(req: NextRequest) {
   try {
     if (!(await requireAdminSession())) {
@@ -549,12 +469,8 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Valid id is required" }, { status: 400 });
     }
 
-    const client = await clientPromise;
-    const db = client.db(DB_NAME);
-
-    const result = await db
-      .collection(COLLECTIONS.HAIR_QUIZ_FORMS)
-      .deleteOne({ _id: new ObjectId(id) });
+    const collection = await getCollection();
+    const result = await collection.deleteOne({ _id: new ObjectId(id) });
 
     if (result.deletedCount === 0) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

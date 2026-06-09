@@ -73,6 +73,7 @@ interface DataTableProps<TData, TValue> {
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   totalItems?: number;
+  hideEdgePageButtons?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -95,6 +96,7 @@ export function DataTable<TData, TValue>({
   searchValue,
   onSearchChange,
   totalItems,
+  hideEdgePageButtons = false,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -307,16 +309,18 @@ export function DataTable<TData, TValue>({
             <span className="mr-2 text-xs text-muted-foreground whitespace-nowrap">
               Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
             </span>
-            <Button
-              variant="outline"
-              size="icon"
-              className="hidden h-8 w-8 lg:flex"
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <span className="sr-only">First page</span>
-              <ChevronsLeft className="h-4 w-4" />
-            </Button>
+            {!hideEdgePageButtons ? (
+              <Button
+                variant="outline"
+                size="icon"
+                className="hidden h-8 w-8 lg:flex"
+                onClick={() => table.setPageIndex(0)}
+                disabled={!table.getCanPreviousPage()}
+              >
+                <span className="sr-only">First page</span>
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+            ) : null}
             <Button
               variant="outline"
               size="icon"
@@ -337,16 +341,18 @@ export function DataTable<TData, TValue>({
               <span className="sr-only">Next page</span>
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="hidden h-8 w-8 lg:flex"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
-            >
-              <span className="sr-only">Last page</span>
-              <ChevronsRight className="h-4 w-4" />
-            </Button>
+            {!hideEdgePageButtons ? (
+              <Button
+                variant="outline"
+                size="icon"
+                className="hidden h-8 w-8 lg:flex"
+                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                disabled={!table.getCanNextPage()}
+              >
+                <span className="sr-only">Last page</span>
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            ) : null}
           </div>
         </div>
       )}

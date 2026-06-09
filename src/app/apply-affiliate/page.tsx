@@ -5,6 +5,7 @@ import type { Value } from "react-phone-number-input";
 import { toast } from "sonner";
 
 import { SiteFooter } from "@/components/website/footer";
+import { InstagramReelPopup } from "@/components/website/instagram-reel-popup";
 import { Navbar } from "@/components/website/navbar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,6 +22,8 @@ import { Label } from "@/components/ui/label";
 import { PhoneInputField } from "@/components/ui/phone-input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
+
+const AFFILIATE_INTRO_REEL_URL = "https://www.instagram.com/reel/DYnYw6EEajR/";
 
 type LifeNeed =
   | "additional_income"
@@ -277,6 +280,7 @@ export default function ApplyAffiliatePage() {
   return (
     <div className="min-h-svh bg-background text-foreground antialiased">
       <Navbar />
+      <InstagramReelPopup url={AFFILIATE_INTRO_REEL_URL} />
 
       <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 sm:py-14">
         <div className="mb-8 text-center sm:mb-10">
@@ -289,7 +293,7 @@ export default function ApplyAffiliatePage() {
           <div className="mx-auto mt-4 max-w-2xl space-y-3 text-left text-sm leading-relaxed text-muted-foreground sm:text-base">
             <p>
               Hi there! I am so glad to have you here! I have always been active on social
-              media but it was 2.5 years ago that I hopped on an opportunity that now helps me
+              media but it was 3.5 years ago that I hopped on an opportunity that now helps me
               make an income out of it!
             </p>
             <p>
