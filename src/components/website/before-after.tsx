@@ -24,6 +24,36 @@ const BEFORE_AFTER_PAIRS = [
     beforeImage: "/images/bnf/b2.png",
     afterImage: "/images/bnf/a2.png",
   },
+  {
+    id: "3",
+    beforeImage: "/images/bnf/b3.png",
+    afterImage: "/images/bnf/a3.png",
+  },
+  {
+    id: "4",
+    beforeImage: "/images/bnf/b4.png",
+    afterImage: "/images/bnf/a4.png",
+  },
+  {
+    id: "5",
+    beforeImage: "/images/bnf/b5.png",
+    afterImage: "/images/bnf/a5.png",
+  },
+  {
+    id: "6",
+    beforeImage: "/images/bnf/b6.png",
+    afterImage: "/images/bnf/a6.png",
+  },
+  {
+    id: "7",
+    beforeImage: "/images/bnf/b7.png",
+    afterImage: "/images/bnf/a7.png",
+  },
+  {
+    id: "8",
+    beforeImage: "/images/bnf/b8.png",
+    afterImage: "/images/bnf/a8.png",
+  },
 ] as const;
 
 const AUTOPLAY_MS = 6000;
