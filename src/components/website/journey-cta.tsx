@@ -15,6 +15,7 @@ type JourneyAction = {
   description: string;
   href: string;
   external?: boolean;
+  featured?: boolean;
   icon: LucideIcon;
 };
 
@@ -27,9 +28,10 @@ const JOURNEY_ACTIONS: JourneyAction[] = [
     icon: ShoppingBag,
   },
   {
-    title: "Discover Your Plan",
-    description: "Take the Custom Hair Quiz",
+    title: "Take Your Custom Hair Journey Plan",
+    description: "Free hair quiz — get a routine made just for you",
     href: "/hair-quiz",
+    featured: true,
     icon: FileQuestionMark,
   },
   {
@@ -45,48 +47,69 @@ function JourneyActionCard({
   description,
   href,
   external,
+  featured,
   icon: Icon,
 }: JourneyAction) {
   const content = (
     <>
       <span
         className={cn(
-          "flex size-12 shrink-0 items-center justify-center rounded-xl",
-          "bg-primary text-primary-foreground",
+          "flex shrink-0 items-center justify-center rounded-xl",
+          featured
+            ? "size-14 bg-primary text-primary-foreground shadow-md sm:size-16"
+            : "size-12 bg-primary text-primary-foreground",
         )}
       >
-        <Icon className="size-5" strokeWidth={1.75} aria-hidden />
+        <Icon
+          className={cn(featured ? "size-6 sm:size-7" : "size-5")}
+          strokeWidth={1.75}
+          aria-hidden
+        />
       </span>
       <span className="min-w-0 flex-1 text-start">
+        {featured ? (
+          <span className="mb-1.5 inline-flex rounded-full bg-primary/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
+            Start here
+          </span>
+        ) : null}
         <span
           className={cn(
             "block font-semibold leading-snug",
-            "text-foreground",
+            featured
+              ? "text-lg font-bold text-foreground sm:text-xl"
+              : "text-foreground",
           )}
         >
           {title}
         </span>
         <span
           className={cn(
-            "mt-0.5 block text-sm leading-snug",
-            "text-muted-foreground",
+            "mt-0.5 block leading-snug",
+            featured
+              ? "text-sm text-foreground/80 sm:text-base"
+              : "text-sm text-muted-foreground",
           )}
         >
           {description}
         </span>
       </span>
       <ChevronRight
-        className={cn("size-5 shrink-0", "text-muted-foreground")}
-        strokeWidth={1.75}
+        className={cn(
+          "size-5 shrink-0",
+          featured ? "size-6 text-primary" : "text-muted-foreground",
+        )}
+        strokeWidth={featured ? 2.25 : 1.75}
         aria-hidden
       />
     </>
   );
 
   const className = cn(
-    "flex w-full items-center gap-4 rounded-2xl border p-4 shadow-sm",
-    "border-2 border-border bg-card",
-    "transition-shadow hover:shadow-md active:scale-[0.995]",
+    "flex w-full items-center gap-4 rounded-2xl border shadow-sm transition-all",
+    "hover:shadow-md active:scale-[0.995]",
+    featured
+      ? "gap-5 border-2 border-primary/50 bg-linear-to-br from-primary/12 via-primary/5 to-card p-5 shadow-md ring-2 ring-primary/15 sm:scale-[1.02] sm:gap-6 sm:p-6 md:p-7"
+      : "border-2 border-border bg-card p-4",
   );
 
   if (external) {
