@@ -18,7 +18,6 @@ import { cn } from "@/lib/utils";
 
 /** Set `NEXT_PUBLIC_INSTAGRAM_URL` in `.env` to your IG profile. */
 const INSTAGRAM_URL = "https://www.instagram.com/asthasharma28/";
-const METASHOP_URL = "https://monatsocialshop.com/ASTHA-RANA";
 
 type NavLink = {
   label: string;
@@ -34,12 +33,12 @@ const NAV_LINKS: NavLink[] = [
     scrollToId: "before-and-after",
   },
   {
-    label: "Shop Essentials",
-    href: METASHOP_URL,
-    external: true,
+    label: "Best Sellers",
+    href: "/#best-sellers",
+    scrollToId: "best-sellers",
   },
   {
-    label: "Hair Quiz Consultation",
+    label: "Take my Custom Hair Quiz",
     href: "/hair-quiz",
   },
   {
@@ -101,12 +100,18 @@ function NavSheetLink({ item }: { item: NavLink }) {
 function TopBanner() {
   return (
     <div className="bg-black px-4 py-2">
-      <div className="mx-auto flex max-w-[1600px] items-center justify-center text-[11px] font-medium uppercase tracking-[0.12em] text-white">
+      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-medium uppercase tracking-[0.12em] text-white">
         <Link
           href="/apply-affiliate"
           className="transition-opacity hover:opacity-80"
         >
           Be an Affiliate
+        </Link>
+        <span className="text-white/40" aria-hidden>
+          |
+        </span>
+        <Link href="/hair-quiz" className="transition-opacity hover:opacity-80">
+          Take my Custom Hair Quiz
         </Link>
       </div>
     </div>
