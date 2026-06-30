@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { auth } from "@/lib/auth/auth";
 import clientPromise, { COLLECTIONS, DB_NAME } from "@/lib/db";
+import { notifyHairQuizSubmitted } from "@/lib/form-notifications";
 import { isHairQuizAdmin } from "@/lib/hair-quiz/api-auth";
 import {
   buildHairQuizListQuery,
@@ -237,6 +238,17 @@ export async function POST(req: NextRequest) {
       createdAt: now,
       updatedAt: now,
     });
+
+    try {
+      await notifyHairQuizSubmitted({
+        name: parsed.data.name,
+        email: parsed.data.email,
+        instagramUsername: parsed.data.instagramUsername,
+        whatsapp: parsed.data.whatsapp,
+      });
+    } catch (emailError) {
+      console.error("Hair quiz saved but notification email failed:", emailError);
+    }
 
     return NextResponse.json(
       { message: "Hair quiz submitted successfully", id: result.insertedId.toString() },

@@ -20,6 +20,44 @@ function extractSendError(err: unknown): string {
   return "Unknown email provider error";
 }
 
+async function sendEmailWithRetry(payload: {
+  to: string | string[];
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<void> {
+  if (!resend) {
+    throw new Error(
+      "Email service is not configured. Missing RESEND_API_KEY/RESEND_API.",
+    );
+  }
+
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const result = await resend.emails.send({
+        from: FROM,
+        to: payload.to,
+        subject: payload.subject,
+        html: payload.html,
+        text: payload.text,
+      });
+      if (result.error) {
+        throw new Error(result.error.message || "Resend reported a send error");
+      }
+      return;
+    } catch (err) {
+      lastError = err;
+      console.error(`Email attempt ${attempt}/2 failed:`, err);
+      if (attempt < 2) await sleep(300);
+    }
+  }
+
+  throw new Error(
+    `Email delivery failed after retries: ${extractSendError(lastError)}`,
+  );
+}
+
 /**
  * Send a Resend templated email with one automatic retry.
  * Throws if the email service is unconfigured or all attempts fail.
@@ -65,4 +103,13 @@ export async function sendTemplatedEmail(opts: {
   throw new Error(
     `Email delivery failed after retries: ${extractSendError(lastError)}`,
   );
+}
+
+export async function sendPlainEmail(opts: {
+  to: string | string[];
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<void> {
+  await sendEmailWithRetry(opts);
 }

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { isAffiliateAdmin } from "@/lib/apply-affiliate/api-auth";
 import { auth } from "@/lib/auth/auth";
 import clientPromise, { COLLECTIONS, DB_NAME } from "@/lib/db";
+import { notifyAffiliateApplicationSubmitted } from "@/lib/form-notifications";
 import {
   buildSubmissionMeta,
   parseClientContext,
@@ -229,6 +230,17 @@ export async function POST(req: NextRequest) {
       createdAt: now,
       updatedAt: now,
     });
+
+    try {
+      await notifyAffiliateApplicationSubmitted({
+        name: parsed.data.name,
+        email: parsed.data.email,
+        instagramUsername: parsed.data.instagramUsername,
+        phone: parsed.data.phone,
+      });
+    } catch (emailError) {
+      console.error("Affiliate application saved but notification email failed:", emailError);
+    }
 
     return NextResponse.json(
       {
