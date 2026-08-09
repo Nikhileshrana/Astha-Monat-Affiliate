@@ -19,6 +19,10 @@ export type AdminTracking = {
   followUpAt: string | null;
   whatsappAt?: string;
   instagramAt?: string;
+  /** Set when status first becomes "completed" (Treatment given). */
+  treatmentCompletedAt?: string;
+  /** Set after the 1-month product check-in email is sent. */
+  followUpEmailSentAt?: string;
   notes: AdminNote[];
 };
 
@@ -27,6 +31,9 @@ export const DEFAULT_ADMIN_TRACKING: AdminTracking = {
   followUpAt: null,
   notes: [],
 };
+
+/** Days after treatment given before the product check-in email sends. */
+export const TREATMENT_FOLLOW_UP_EMAIL_DAYS = 30;
 
 export const TREATMENT_STATUS_OPTIONS: {
   value: TreatmentStatus;
@@ -264,12 +271,16 @@ export function normalizeAdminTracking(value: unknown): AdminTracking {
 
   const whatsappAt = toIso(admin.whatsappAt);
   const instagramAt = toIso(admin.instagramAt);
+  const treatmentCompletedAt = toIso(admin.treatmentCompletedAt);
+  const followUpEmailSentAt = toIso(admin.followUpEmailSentAt);
 
   return {
     treatmentStatus,
     followUpAt: toIso(admin.followUpAt) ?? null,
     ...(whatsappAt ? { whatsappAt } : {}),
     ...(instagramAt ? { instagramAt } : {}),
+    ...(treatmentCompletedAt ? { treatmentCompletedAt } : {}),
+    ...(followUpEmailSentAt ? { followUpEmailSentAt } : {}),
     notes,
   };
 }

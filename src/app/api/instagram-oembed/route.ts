@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 
 const INSTAGRAM_URL_PATTERN =
   /^https:\/\/(www\.)?instagram\.com\/(reel|reels|p|tv)\/[A-Za-z0-9_-]+\/?(\?.*)?$/;
@@ -39,6 +39,8 @@ async function fetchGraphOembed(permalink: string) {
 }
 
 export async function GET(req: NextRequest) {
+  await connection();
+
   try {
     const rawUrl = req.nextUrl.searchParams.get("url")?.trim();
 

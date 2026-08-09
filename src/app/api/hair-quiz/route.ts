@@ -417,6 +417,9 @@ export async function PATCH(req: NextRequest) {
 
     if (treatmentStatus) {
       adminTracking.treatmentStatus = treatmentStatus;
+      if (treatmentStatus === "completed" && !adminTracking.treatmentCompletedAt) {
+        adminTracking.treatmentCompletedAt = now.toISOString();
+      }
     }
 
     if (markOutreach === "whatsapp") {
@@ -464,33 +467,6 @@ export async function PATCH(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error patching hair quiz admin tracking:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  }
-}
-
-/** Admin delete. */
-export async function DELETE(req: NextRequest) {
-  try {
-    if (!(await requireAdminSession())) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { id } = (await req.json()) as { id?: string };
-
-    if (!id || !ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Valid id is required" }, { status: 400 });
-    }
-
-    const collection = await getCollection();
-    const result = await collection.deleteOne({ _id: new ObjectId(id) });
-
-    if (result.deletedCount === 0) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({ message: "Hair quiz deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting hair quiz:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

@@ -461,34 +461,3 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-
-/** Protected delete for admin CRUD. */
-export async function DELETE(req: NextRequest) {
-  try {
-    if (!(await requireAdminSession())) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { id } = (await req.json()) as { id?: string };
-
-    if (!id || !ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Valid id is required" }, { status: 400 });
-    }
-
-    const client = await clientPromise;
-    const db = client.db(DB_NAME);
-
-    const result = await db
-      .collection(COLLECTIONS.AFFILIATE_APPLICATIONS)
-      .deleteOne({ _id: new ObjectId(id) });
-
-    if (result.deletedCount === 0) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({ message: "Affiliate application deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting affiliate application:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  }
-}

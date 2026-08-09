@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/hair-quiz-followups",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}

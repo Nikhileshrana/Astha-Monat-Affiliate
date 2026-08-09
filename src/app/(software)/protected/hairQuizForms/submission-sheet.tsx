@@ -132,11 +132,13 @@ export function TreatmentStatusDot({ status }: { status: TreatmentStatus }) {
 
 function DetailRow({ label, value }: { label: string; value: unknown }) {
   return (
-    <div className="grid gap-1 py-2 sm:grid-cols-[11rem_1fr] sm:gap-4">
-      <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="grid grid-cols-[7.5rem_1fr] items-start gap-x-3 py-2.5 sm:grid-cols-[10rem_1fr] sm:gap-x-4">
+      <dt className="pt-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </dt>
-      <dd className="text-sm leading-relaxed break-words">{formatFieldValue(value)}</dd>
+      <dd className="min-w-0 text-sm leading-relaxed wrap-break-word">
+        {formatFieldValue(value)}
+      </dd>
     </div>
   );
 }
@@ -184,7 +186,7 @@ function AdminControls({
 
   return (
     <section className="space-y-4 rounded-lg border bg-muted/30 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <h3 className="text-sm font-semibold">Admin</h3>
         <TreatmentStatusControl
           status={adminTracking.treatmentStatus}
@@ -193,13 +195,13 @@ function AdminControls({
         />
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <div className="relative">
           <Button
             type="button"
-            size="sm"
+            size="lg"
             variant="outline"
-            className="text-[#25D366] hover:text-[#25D366]"
+            className="h-11 w-full text-[#25D366] hover:text-[#25D366]"
             disabled={!whatsappUrl || saving}
             onClick={() => {
               window.open(whatsappUrl!, "_blank", "noopener,noreferrer");
@@ -215,9 +217,9 @@ function AdminControls({
         <div className="relative">
           <Button
             type="button"
-            size="sm"
+            size="lg"
             variant="outline"
-            className="text-[#E1306C] hover:text-[#E1306C]"
+            className="h-11 w-full text-[#E1306C] hover:text-[#E1306C]"
             disabled={!instagramHandle || saving}
             onClick={() => {
               openInstagramMessage(instagramHandle);
@@ -236,17 +238,18 @@ function AdminControls({
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Follow-up reminder
         </p>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2">
           <Input
             type="datetime-local"
             value={followUpDraft}
             onChange={(event) => setFollowUpDraft(event.target.value)}
-            className="sm:max-w-xs"
+            className="w-full"
           />
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <Button
               type="button"
               size="sm"
+              className="w-full"
               disabled={saving}
               onClick={() =>
                 void (async () => {
@@ -271,6 +274,7 @@ function AdminControls({
               type="button"
               size="sm"
               variant="outline"
+              className="w-full"
               disabled={saving || !adminTracking.followUpAt}
               onClick={() => {
                 setFollowUpDraft("");
@@ -360,23 +364,23 @@ export function HairQuizSubmissionSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex h-full w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-xl!"
+        className="flex h-full w-full! max-w-none! flex-col gap-0 overflow-hidden p-0 data-[side=right]:w-full"
       >
-        <SheetHeader className="border-b">
+        <SheetHeader className="border-b pe-12">
           <SheetTitle>{formData.name}</SheetTitle>
           <SheetDescription>
             Submitted {new Date(submission.createdAt).toLocaleString()}
           </SheetDescription>
         </SheetHeader>
 
-        <div className="min-h-0 flex-1 overflow-hidden py-4">
-          <ScrollArea className="h-full px-6 pb-4">
-            <div className="space-y-6 pb-6">
+        <div className="min-h-0 flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="space-y-6 px-4 py-4 pb-8 sm:px-6">
               <AdminControls submission={submission} onUpdated={onUpdated} />
 
               <Separator />
 
-              <section>
+              <section className="space-y-1">
                 <h3 className="text-sm font-semibold">Contact</h3>
                 <dl className="divide-y divide-border">
                   <DetailRow label="Name" value={formData.name} />
@@ -384,26 +388,26 @@ export function HairQuizSubmissionSheet({
                   <DetailRow label="WhatsApp" value={formData.whatsapp} />
                   <DetailRow label="Phone country" value={formData.whatsappCountry} />
                   <DetailRow label="Instagram" value={`@${formData.instagramUsername}`} />
-                  <DetailRow label="Contact preference" value={formData.contactPreference} />
+                  <DetailRow label="Prefers" value={formData.contactPreference} />
                 </dl>
               </section>
 
               <Separator />
 
-              <section>
+              <section className="space-y-1">
                 <h3 className="text-sm font-semibold">Hair profile</h3>
                 <dl className="divide-y divide-border">
                   <DetailRow label="Thickness" value={formData.hairThickness} />
                   <DetailRow label="Texture" value={formData.hairTexture} />
                   <DetailRow label="Roots" value={formData.rootType} />
                   <DetailRow label="Ends" value={formData.endsType} />
-                  <DetailRow label="Dandruff / itchy scalp" value={formData.hasDandruffOrItchyScalp} />
-                  <DetailRow label="Washes per week" value={formData.washFrequencyPerWeek} />
+                  <DetailRow label="Dandruff" value={formData.hasDandruffOrItchyScalp} />
+                  <DetailRow label="Washes / week" value={formData.washFrequencyPerWeek} />
                   <DetailRow label="Frizzy" value={formData.getsFrizzy} />
                   <DetailRow label="Hot tools" value={formData.hotToolsFrequency} />
-                  <DetailRow label="Hairloss concern" value={formData.hairlossConcern} />
-                  <DetailRow label="Current products" value={formData.currentProducts} />
-                  <DetailRow label="Colour treated" value={formData.isColorTreated} />
+                  <DetailRow label="Hairloss" value={formData.hairlossConcern} />
+                  <DetailRow label="Products" value={formData.currentProducts} />
+                  <DetailRow label="Colour" value={formData.isColorTreated} />
                   <DetailRow label="Hair goal" value={formData.ultimateHairGoal} />
                   <DetailRow label="Budget" value={formData.budget} />
                 </dl>
@@ -412,7 +416,7 @@ export function HairQuizSubmissionSheet({
               {meta ? (
                 <>
                   <Separator />
-                  <section>
+                  <section className="space-y-1">
                     <h3 className="text-sm font-semibold">Submission context</h3>
                     <dl className="divide-y divide-border">
                       <DetailRow label="IP" value={meta.ip} />
@@ -443,7 +447,7 @@ export function HairQuizSubmissionSheet({
 
         <SheetFooter className="border-t">
           <SheetClose asChild>
-            <Button variant="outline" className="w-full sm:w-auto">
+            <Button variant="outline" className="w-full">
               Close
             </Button>
           </SheetClose>

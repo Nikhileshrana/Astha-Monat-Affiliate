@@ -2,19 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, Download, Trash2 } from "lucide-react";
+import { ArrowUpDown, Download } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -52,7 +42,6 @@ export default function HairQuizFormsPage() {
     phoneCountries: [],
   });
   const [selectedSubmission, setSelectedSubmission] = useState<HairQuizSubmission | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<HairQuizSubmission | null>(null);
   const cursorsRef = useRef<(string | null)[]>([null]);
 
   const resetPagination = useCallback(() => {
@@ -183,42 +172,6 @@ export default function HairQuizFormsPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-
-    try {
-      setLoading(true);
-      const res = await fetch("/api/hair-quiz", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: deleteTarget._id }),
-      });
-      const json = await res.json();
-
-      if (!res.ok) {
-        toast.error(json.error || "Failed to delete submission");
-        return;
-      }
-
-      toast.success("Submission deleted");
-      setDeleteTarget(null);
-      if (selectedSubmission?._id === deleteTarget._id) {
-        setSelectedSubmission(null);
-      }
-      fetchSubmissions(
-        pagination.pageIndex,
-        pagination.pageSize,
-        debouncedSearch,
-        appliedFilters,
-      );
-      fetchFilterOptions();
-    } catch {
-      toast.error("Network error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const columns: ColumnDef<HairQuizSubmission>[] = [
     {
       id: "name",
@@ -235,22 +188,6 @@ export default function HairQuizFormsPage() {
       ),
       cell: ({ row }) => (
         <div className="font-medium">{row.original.formData.name}</div>
-      ),
-    },
-    {
-      id: "whatsapp",
-      accessorFn: (row) => row.formData.whatsapp,
-      header: "WhatsApp",
-      cell: ({ row }) => (
-        <div className="text-sm whitespace-nowrap">{row.original.formData.whatsapp}</div>
-      ),
-    },
-    {
-      id: "instagramUsername",
-      accessorFn: (row) => row.formData.instagramUsername,
-      header: "Instagram",
-      cell: ({ row }) => (
-        <div className="text-sm">@{row.original.formData.instagramUsername}</div>
       ),
     },
     {
@@ -328,24 +265,6 @@ export default function HairQuizFormsPage() {
         </div>
       ),
     },
-    {
-      id: "actions",
-      header: () => <div className="text-right">Actions</div>,
-      cell: ({ row }) => (
-        <div className="flex justify-end" onClick={(event) => event.stopPropagation()}>
-          <Button
-            type="button"
-            size="icon-sm"
-            variant="ghost"
-            className="text-destructive hover:text-destructive"
-            aria-label={`Delete ${row.original.formData.name}`}
-            onClick={() => setDeleteTarget(row.original)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
-    },
   ];
 
   return (
@@ -397,25 +316,6 @@ export default function HairQuizFormsPage() {
         onOpenChange={(open) => !open && setSelectedSubmission(null)}
         onUpdated={mergeSubmissionUpdate}
       />
-
-      <AlertDialog
-        open={!!deleteTarget}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete submission?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently remove the hair quiz submission for{" "}
-              <span className="font-medium text-foreground">{deleteTarget?.formData.name}</span>.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

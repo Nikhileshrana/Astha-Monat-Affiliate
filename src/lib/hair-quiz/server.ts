@@ -19,6 +19,13 @@ const HAIR_QUIZ_INDEXES = [
   { key: { createdAt: -1, _id: -1 } },
   { key: { "adminTracking.treatmentStatus": 1, createdAt: -1, _id: -1 } },
   { key: { "adminTracking.followUpAt": 1 } },
+  {
+    key: {
+      "adminTracking.treatmentStatus": 1,
+      "adminTracking.followUpEmailSentAt": 1,
+      "adminTracking.treatmentCompletedAt": 1,
+    },
+  },
   { key: { "formData.whatsappCountry": 1 } },
   { key: { "submissionMeta.geo.country": 1 } },
   { key: { "submissionMeta.geo.city": 1 } },

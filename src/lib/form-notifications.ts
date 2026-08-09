@@ -1,7 +1,6 @@
 import { sendPlainEmail } from "@/lib/email";
 
-const FORM_NOTIFICATION_EMAIL =
-  process.env.FORM_NOTIFICATION_EMAIL?.trim() || "astha2891@gmail.com";
+const FORM_NOTIFICATION_EMAIL = process.env.FORM_NOTIFICATION_EMAIL?.trim() || "astha2891@gmail.com";
 
 type FormContactDetails = {
   name: string;
